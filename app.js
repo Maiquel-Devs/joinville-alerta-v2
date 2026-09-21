@@ -1,60 +1,54 @@
-// app.js - joinville-alerta-v2 (Integrado com a Fase 2)
-import { fetchWeatherData } from './src/services/weatherService.js';
-import { calculateTideLevel, evaluateRisk } from './src/services/riskEngine.js';
-import { generateMistralAlert } from './src/services/mistralAgent.js';
+// app.js - Integração com a API FastAPI (Fase 3)
 
 let allBairros = [];
 
 async function initApp() {
   const updateEl = document.getElementById("last-update");
-  if (updateEl) updateEl.textContent = "Sincronizando telemetria de Joinville...";
+  if (updateEl) updateEl.textContent = "Sincronizando com o servidor de Joinville...";
 
-  // 1. Busca dados da Open-Meteo em tempo real
-  const weather = await fetchWeatherData();
-  
-  // 2. Calcula a maré aproximada no Rio Cachoeira / Babitonga
-  const tideLevel = calculateTideLevel();
+  try {
+    // 1. Consome o endpoint local da API Python (In-Memory Cache < 5ms)
+    const response = await fetch("http://localhost:8000/api/v1/status-geral");
+    const result = await response.json();
+    const data = result.data;
 
-  // 3. Avalia o nível de risco
-  const risk = evaluateRisk(weather.rain24h, weather.forecast6h, tideLevel);
+    // 2. Atualiza o Header com o timestamp do servidor
+    if (updateEl) {
+      updateEl.textContent = `Joinville - SC • ${data.timestamp}`;
+    }
 
-  // 4. Obtém diagnóstico (via Mistral AI ou resposta de contingência)
-  // Nota: Deixe sem chave por enquanto para usar o modo contingência sem custos
-  const mistralResponse = await generateMistralAlert(risk, null);
+    // 3. Atualiza Card do Agente Mistral AI
+    const badgeEl = document.getElementById("ai-risk-badge");
+    if (badgeEl) {
+      badgeEl.textContent = `NÍVEL ${data.nivel}`;
+      badgeEl.className = `badge-risk ${data.nivel}`;
+    }
 
-  // 5. Atualiza o Header
-  if (updateEl) {
-    updateEl.textContent = `Joinville - SC • ${weather.timestamp}`;
+    const titleEl = document.getElementById("ai-title");
+    if (titleEl) titleEl.textContent = data.alerta_mistral_ai.titulo;
+
+    const msgEl = document.getElementById("ai-message");
+    if (msgEl) msgEl.textContent = data.alerta_mistral_ai.mensagem_humana;
+
+    // 4. Atualiza Métricas na Tela
+    const rainEl = document.getElementById("m-rain");
+    if (rainEl) rainEl.textContent = `${data.chuva_24h_mm.toFixed(1)} mm`;
+
+    const tideEl = document.getElementById("m-tide");
+    if (tideEl) tideEl.textContent = `${data.mare_babitonga_m.toFixed(2)} m`;
+
+  } catch (err) {
+    console.warn("Falha ao conectar na API Python (usando modo contingência):", err);
   }
 
-  // 6. Atualiza Card da IA (Mistral)
-  const badgeEl = document.getElementById("ai-risk-badge");
-  if (badgeEl) {
-    badgeEl.textContent = `NÍVEL ${risk.nivel}`;
-    badgeEl.className = `badge-risk ${risk.nivel}`;
-  }
-
-  const titleEl = document.getElementById("ai-title");
-  if (titleEl) titleEl.textContent = mistralResponse.titulo;
-
-  const msgEl = document.getElementById("ai-message");
-  if (msgEl) msgEl.textContent = mistralResponse.mensagem_humana;
-
-  // 7. Atualiza Métricas na Tela
-  const rainEl = document.getElementById("m-rain");
-  if (rainEl) rainEl.textContent = `${weather.rain24h.toFixed(1)} mm`;
-
-  const tideEl = document.getElementById("m-tide");
-  if (tideEl) tideEl.textContent = `${tideLevel.toFixed(2)} m`;
-
-  // 8. Carrega bairros (usando a lista do mock-data como base)
+  // 5. Carrega a lista de bairros local
   try {
     const res = await fetch("mock-data.json");
     const data = await res.json();
     allBairros = data.bairros;
     renderBairros(allBairros);
   } catch (e) {
-    console.warn("Erro ao carregar lista de bairros local:", e);
+    console.warn("Erro ao carregar lista de bairros:", e);
   }
 }
 
@@ -110,5 +104,4 @@ if (searchInput) {
   });
 }
 
-// Inicializa a aplicação
 initApp();
