@@ -1,0 +1,161 @@
+/* style.css - Minimalista, ultra-leve para emergência em Joinville */
+:root {
+  --bg-main: #0f172a;
+  --card-bg: #1e293b;
+  --text-primary: #f8fafc;
+  --text-muted: #94a3b8;
+  --border-color: #334155;
+  --red-critical: #ef4444;
+  --orange-high: #f97316;
+  --yellow-warn: #eab308;
+  --green-ok: #22c55e;
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+}
+
+body {
+  background-color: var(--bg-main);
+  color: var(--text-primary);
+  padding: 12px;
+  max-width: 600px; /* Layout focado em mobile */
+  margin: 0 auto;
+  line-height: 1.4;
+}
+
+header {
+  text-align: center;
+  padding: 12px 0;
+  border-bottom: 1px solid var(--border-color);
+  margin-bottom: 12px;
+}
+
+header h1 {
+  font-size: 1.3rem;
+  color: #38bdf8;
+}
+
+header p {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+}
+
+/* Card do Agente de IA */
+.ai-card {
+  background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+  border: 2px solid var(--red-critical);
+  border-radius: 8px;
+  padding: 14px;
+  margin-bottom: 12px;
+  box-shadow: 0 4px 12px rgba(239, 68, 68, 0.2);
+}
+
+.ai-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.badge-risk {
+  font-size: 0.75rem;
+  font-weight: bold;
+  padding: 3px 8px;
+  border-radius: 4px;
+  background-color: var(--red-critical);
+  color: #ffffff;
+}
+
+.ai-card h2 {
+  font-size: 1.05rem;
+  margin-bottom: 6px;
+}
+
+.ai-card p {
+  font-size: 0.88rem;
+  color: #e2e8f0;
+}
+
+/* Grid de Métricas de Telemetria */
+.metrics-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.metric-card {
+  background-color: var(--card-bg);
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  padding: 10px;
+  text-align: center;
+}
+
+.metric-card span {
+  font-size: 0.7rem;
+  color: var(--text-muted);
+  display: block;
+  text-transform: uppercase;
+}
+
+.metric-card strong {
+  font-size: 1.2rem;
+  color: #38bdf8;
+}
+
+/* Busca Rápida */
+.search-box {
+  margin-bottom: 12px;
+}
+
+.search-input {
+  width: 100%;
+  padding: 12px;
+  border-radius: 6px;
+  border: 1px solid var(--border-color);
+  background-color: var(--card-bg);
+  color: var(--text-primary);
+  font-size: 0.95rem;
+}
+
+/* Cards de Bairros */
+.bairro-card {
+  background-color: var(--card-bg);
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  padding: 12px;
+  margin-bottom: 8px;
+}
+
+.bairro-card.CRITICO { border-left: 5px solid var(--red-critical); }
+.bairro-card.ALTO { border-left: 5px solid var(--orange-high); }
+.bairro-card.ATENCAO { border-left: 5px solid var(--yellow-warn); }
+
+.bairro-title {
+  display: flex;
+  justify-content: space-between;
+  font-weight: bold;
+  font-size: 0.95rem;
+  margin-bottom: 4px;
+}
+
+.ruas-list {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  margin-top: 6px;
+  padding-left: 16px;
+}
+
+footer {
+  text-align: center;
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  margin-top: 16px;
+  padding-top: 10px;
+  border-top: 1px solid var(--border-color);
+}

@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>joinville-alerta-v2 | Emergência de Alagamentos</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+  <header>
+    <h1>🌧️ joinville-alerta-v2</h1>
+    <p id="last-update">Atualizando telemetria...</p>
+  </header>
+
+  <main>
+    <!-- Card do Agente de IA (Mistral) -->
+    <section class="ai-card">
+      <div class="ai-header">
+        <span class="badge-risk" id="ai-risk-badge">...</span>
+        <small style="color: #94a3b8; font-size: 0.7rem;">🤖 Agente Mistral AI</small>
+      </div>
+      <h2 id="ai-title">Carregando diagnóstico...</h2>
+      <p id="ai-message">Consultando dados de chuva e maré no Rio Cachoeira...</p>
+    </section>
+
+    <!-- Métricas Hidrometeorológicas -->
+    <section class="metrics-grid">
+      <div class="metric-card">
+        <span>Chuva Acumulada (24h)</span>
+        <strong id="m-rain">-- mm</strong>
+      </div>
+      <div class="metric-card">
+        <span>Maré Babitonga</span>
+        <strong id="m-tide">-- m</strong>
+      </div>
+    </section>
+
+    <!-- Barra de Pesquisa de Ruas -->
+    <section class="search-box">
+      <input 
+        type="text" 
+        id="street-search" 
+        class="search-input" 
+        placeholder="🔍 Digite sua rua ou bairro (ex: Procópio Gomes, Bucarein)..." 
+      />
+    </section>
+
+    <!-- Lista Dinâmica de Bairros e Ruas Críticas -->
+    <section id="bairros-container">
+      <!-- Inserido dinamicamente pelo JS -->
+    </section>
+  </main>
+
+  <footer>
+    <p>joinville-alerta-v2 • Informação comunitária direta ao cidadão</p>
+  </footer>
+
+  <script src="app.js"></script>
+</body>
+</html>

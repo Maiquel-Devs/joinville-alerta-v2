@@ -1,0 +1,69 @@
+{
+  "cidade": "Joinville",
+  "uf": "SC",
+  "ultima_atualizacao": "18:45 - Há 5 min",
+  "telemetria": {
+    "chuva_24h_mm": 55.0,
+    "chuva_atual_mm_h": 15.0,
+    "previsao_6h_mm": 25.0,
+    "mare_babitonga_m": 2.20,
+    "condicao_mare": "🔴 Sizígia / Represamento Crítico"
+  },
+  "alerta_mistral_ai": {
+    "nivel": "CRITICO",
+    "titulo": "Risco Crítico de Represamento no Rio Cachoeira",
+    "mensagem_humana": "Com a maré em 2.20m e chuva forte de 15mm/h, a água do Rio Cachoeira não vai escoar. Ocorrerá alagamento nas áreas baixas do Bucarein, Centro e Anita Garibaldi nas próximas 1 a 2 horas. Retire veículos de subsolos imediatamente."
+  },
+  "bairros": [
+    {
+      "id": "bucarein",
+      "nome": "Bucarein",
+      "risco": "CRITICO",
+      "cota_m": 1.2,
+      "status": "Transbordamento de Galerias",
+      "ruas_afetadas": [
+        "Rua Minas Gerais",
+        "Rua Urussanga",
+        "Avenida Coronel Procópio Gomes",
+        "Rua Inácio Bastos",
+        "Rua Doutor João Colin (Trecho Sul)"
+      ]
+    },
+    {
+      "id": "centro",
+      "nome": "Centro",
+      "risco": "ALTO",
+      "cota_m": 1.5,
+      "status": "Represamento Estuarino",
+      "ruas_afetadas": [
+        "Rua do Príncipe (Trecho Sul)",
+        "Rua Nove de Julho",
+        "Avenida Juscelino Kubitschek",
+        "Rua Abdon Batista"
+      ]
+    },
+    {
+      "id": "anita_garibaldi",
+      "nome": "Anita Garibaldi",
+      "risco": "ALTO",
+      "cota_m": 1.6,
+      "status": "Pontos de Alagamento nas Vias Baixas",
+      "ruas_afetadas": [
+        "Rua São Paulo (Entorno da Rodoviária)",
+        "Rua Pedro Lobo",
+        "Rua Via Gastronômica"
+      ]
+    },
+    {
+      "id": "vila_nova",
+      "nome": "Vila Nova",
+      "risco": "ATENCAO",
+      "cota_m": 2.1,
+      "status": "Acúmulo Pluvial nos Canais",
+      "ruas_afetadas": [
+        "Rua XV de Novembro (Trecho Final)",
+        "Rua São Firmino"
+      ]
+    }
+  ]
+}
