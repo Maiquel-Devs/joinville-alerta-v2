@@ -1,7 +1,7 @@
-# backend/scheduler.py
 import httpx
 import math
 from datetime import datetime
+from zoneinfo import ZoneInfo
 from cache_store import update_cache
 from mistral_client import generate_ai_summary
 
@@ -38,12 +38,15 @@ async def update_telemetry_job():
 
             ai_summary = await generate_ai_summary(nivel, rain_24h, tide_m)
             
+            # Ajustado para pegar a hora local de Joinville/Brasília (UTC-3) independente de onde o servidor está hospedado
+            horario_joinville = datetime.now(ZoneInfo("America/Sao_Paulo")).strftime("%H:%M")
+            
             payload = {
                 "nivel": nivel,
                 "chuva_24h_mm": round(rain_24h, 1),
                 "mare_babitonga_m": tide_m,
                 "alerta_mistral_ai": ai_summary,
-                "timestamp": datetime.now().strftime("%H:%M")
+                "timestamp": horario_joinville
             }
             
             update_cache(payload)
