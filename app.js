@@ -1,4 +1,4 @@
-// app.js - Integração com a API FastAPI (Fase 3)
+// app.js - Integração com a API FastAPI (Fase 3 & Fase 4)
 
 let allBairros = [];
 
@@ -7,7 +7,7 @@ async function initApp() {
   if (updateEl) updateEl.textContent = "Sincronizando com o servidor de Joinville...";
 
   try {
-    // 1. Consome o endpoint local da API Python (In-Memory Cache < 5ms)
+    // 1. Consome o endpoint local/nuvem da API Python (In-Memory Cache < 5ms)
     const response = await fetch("https://joinville-alerta-v2.onrender.com/api/v1/status-geral");
     const result = await response.json();
     const data = result.data;
@@ -17,11 +17,19 @@ async function initApp() {
       updateEl.textContent = `Joinville - SC • ${data.timestamp}`;
     }
 
-    // 3. Atualiza Card do Agente Mistral AI
+    // 3. Atualiza Card do Agente Mistral AI e Injeta as Classes CSS de Risco
     const badgeEl = document.getElementById("ai-risk-badge");
     if (badgeEl) {
-      badgeEl.textContent = `NÍVEL ${data.nivel}`;
-      badgeEl.className = `badge-risk ${data.nivel}`;
+      const rawNivel = data.nivel || "NORMAL";
+      // Sanitiza a string para formato de classe CSS (ex: "ATENÇÃO" -> "ATENCAO")
+      const cssClass = rawNivel
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "")
+        .toUpperCase()
+        .trim();
+
+      badgeEl.textContent = `NÍVEL ${rawNivel}`;
+      badgeEl.className = `badge-risk ${cssClass}`;
     }
 
     const titleEl = document.getElementById("ai-title");

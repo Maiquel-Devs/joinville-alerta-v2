@@ -61,13 +61,23 @@ header p {
   margin-bottom: 8px;
 }
 
-.badge-risk {
-  font-size: 0.75rem;
-  font-weight: bold;
-  padding: 3px 8px;
-  border-radius: 4px;
-  background-color: var(--red-critical);
-  color: #ffffff;
+/* Cores dinâmicas para a Badge de Risco Geral */
+.badge-risk.NORMAL,
+.badge-risk.NORMAL_NIVEL {
+    background-color: #10b981 !important; /* Verde - Segurança */
+    color: #ffffff !important;
+}
+
+.badge-risk.ATENCAO, 
+.badge-risk.ALERTA {
+    background-color: #f59e0b !important; /* Laranja - Atenção */
+    color: #ffffff !important;
+}
+
+.badge-risk.PERIGO, 
+.badge-risk.EMERGENCIA {
+    background-color: #ef4444 !important; /* Vermelho - Perigo */
+    color: #ffffff !important;
 }
 
 .ai-card h2 {
