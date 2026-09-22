@@ -8,7 +8,7 @@ async function initApp() {
 
   try {
     // 1. Consome o endpoint local da API Python (In-Memory Cache < 5ms)
-    const response = await fetch("http://localhost:8000/api/v1/status-geral");
+    const response = await fetch("https://joinville-alerta-v2.onrender.com/api/v1/status-geral");
     const result = await response.json();
     const data = result.data;
 
