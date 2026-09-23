@@ -8,7 +8,7 @@
   --red-critical: #ef4444;
   --orange-high: #f97316;
   --yellow-warn: #eab308;
-  --green-ok: #22c55e;
+  --green-ok: #10b981;
 }
 
 * {
@@ -64,20 +64,21 @@ header p {
 /* Cores dinâmicas para a Badge de Risco Geral */
 .badge-risk.NORMAL,
 .badge-risk.NORMAL_NIVEL {
-    background-color: #10b981 !important; /* Verde - Segurança */
-    color: #ffffff !important;
+  background-color: var(--green-ok) !important; /* Verde - Segurança */
+  color: #ffffff !important;
 }
 
 .badge-risk.ATENCAO, 
 .badge-risk.ALERTA {
-    background-color: #f59e0b !important; /* Laranja - Atenção */
-    color: #ffffff !important;
+  background-color: #f59e0b !important; /* Laranja / Amarelo - Atenção */
+  color: #ffffff !important;
 }
 
 .badge-risk.PERIGO, 
-.badge-risk.EMERGENCIA {
-    background-color: #ef4444 !important; /* Vermelho - Perigo */
-    color: #ffffff !important;
+.badge-risk.EMERGENCIA,
+.badge-risk.CRITICO {
+  background-color: var(--red-critical) !important; /* Vermelho - Perigo */
+  color: #ffffff !important;
 }
 
 .ai-card h2 {
@@ -133,18 +134,37 @@ header p {
   font-size: 0.95rem;
 }
 
-/* Cards de Bairros */
+/* Cards de Bairros com Bordas Laterais Dinâmicas */
 .bairro-card {
   background-color: var(--card-bg);
   border: 1px solid var(--border-color);
   border-radius: 6px;
   padding: 12px;
   margin-bottom: 8px;
+  border-left: 5px solid var(--green-ok); /* Padrão: Verde */
+  transition: border-color 0.3s ease;
 }
 
-.bairro-card.CRITICO { border-left: 5px solid var(--red-critical); }
-.bairro-card.ALTO { border-left: 5px solid var(--orange-high); }
-.bairro-card.ATENCAO { border-left: 5px solid var(--yellow-warn); }
+/* Suporte para minúsculas e maiúsculas */
+.bairro-card.normal,
+.bairro-card.NORMAL { 
+  border-left: 5px solid var(--green-ok) !important; 
+}
+
+.bairro-card.atencao,
+.bairro-card.ATENCAO { 
+  border-left: 5px solid var(--yellow-warn) !important; 
+}
+
+.bairro-card.alto,
+.bairro-card.ALTO { 
+  border-left: 5px solid var(--orange-high) !important; 
+}
+
+.bairro-card.critico,
+.bairro-card.CRITICO { 
+  border-left: 5px solid var(--red-critical) !important; 
+}
 
 .bairro-title {
   display: flex;

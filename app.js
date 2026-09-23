@@ -1,4 +1,4 @@
-// app.js - Integração com a API FastAPI (Fase 3 & Fase 4)
+// app.js - Integração com a API FastAPI e Risco Dinâmico por Bairro
 
 let allBairros = [];
 let currentMare = 0;
@@ -9,12 +9,12 @@ async function initApp() {
   if (updateEl) updateEl.textContent = "Sincronizando com o servidor de Joinville...";
 
   try {
-    // 1. Consome o endpoint local/nuvem da API Python (In-Memory Cache < 5ms)
+    // 1. Consome o endpoint da API Python (In-Memory Cache < 5ms)
     const response = await fetch("https://joinville-alerta-v2.onrender.com/api/v1/status-geral");
     const result = await response.json();
     const data = result.data;
 
-    // Guarda métricas globais para cálculo dinâmico nos bairros
+    // Guarda as métricas globais para o cálculo dinâmico nos cartões dos bairros
     currentChuva = data.chuva_24h_mm || 0;
     currentMare = data.mare_babitonga_m || 0;
 
@@ -23,11 +23,10 @@ async function initApp() {
       updateEl.textContent = `Joinville - SC • ${data.timestamp}`;
     }
 
-    // 3. Atualiza Card do Agente Mistral AI e Injeta as Classes CSS de Risco
+    // 3. Atualiza Card do Agente Mistral AI e aplica classe CSS
     const badgeEl = document.getElementById("ai-risk-badge");
     if (badgeEl) {
       const rawNivel = data.nivel || "NORMAL";
-      // Sanitiza a string para formato de classe CSS (ex: "ATENÇÃO" -> "ATENCAO")
       const cssClass = rawNivel
         .normalize("NFD")
         .replace(/[\u0300-\u036f]/g, "")
@@ -44,7 +43,7 @@ async function initApp() {
     const msgEl = document.getElementById("ai-message");
     if (msgEl) msgEl.textContent = data.alerta_mistral_ai.mensagem_humana;
 
-    // 4. Atualiza Métricas na Tela
+    // 4. Atualiza Métricas Globais na Tela
     const rainEl = document.getElementById("m-rain");
     if (rainEl) rainEl.textContent = `${currentChuva.toFixed(1)} mm`;
 
@@ -78,22 +77,23 @@ function renderBairros(bairros) {
   }
 
   bairros.forEach(b => {
-    // 🧠 LÓGICA DINÂMICA DE RISCO (Calculada em Tempo Real via Primeiros Princípios)
-    let riscoDinamico = "normal";
+    // 🧠 LÓGICA DINÂMICA DE RISCO (Primeiros Princípios)
+    let riscoDinamico = "NORMAL";
     let statusDinamico = "Normal - Sem risco no momento";
 
     if (currentMare >= b.cota_m && currentChuva >= 20) {
-      riscoDinamico = "critico";
+      riscoDinamico = "CRITICO";
       statusDinamico = "Crítico - Alagamento Impraticável nas Vias";
     } else if (currentMare >= b.cota_m) {
-      riscoDinamico = "atencao";
+      riscoDinamico = "ATENCAO";
       statusDinamico = "Atenção - Transbordamento de Galerias / Represamento";
     } else if (currentChuva >= 30) {
-      riscoDinamico = "atencao";
+      riscoDinamico = "ATENCAO";
       statusDinamico = "Atenção - Acúmulo Pluvial nas Enxurradas";
     }
 
     const card = document.createElement("div");
+    // Injeta a classe em maiúsculas para acionar o border-left correto do style.css
     card.className = `bairro-card ${riscoDinamico}`;
 
     const ruasHtml = b.ruas_afetadas.map(rua => `<li>${rua}</li>`).join("");
@@ -112,7 +112,7 @@ function renderBairros(bairros) {
   });
 }
 
-// Filtro de busca de ruas e bairros
+// Filtro de busca rápida de ruas e bairros
 const searchInput = document.getElementById("street-search");
 if (searchInput) {
   searchInput.addEventListener("input", (e) => {
