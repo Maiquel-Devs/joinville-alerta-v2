@@ -1,6 +1,8 @@
 // app.js - Integração com a API FastAPI (Fase 3 & Fase 4)
 
 let allBairros = [];
+let currentMare = 0;
+let currentChuva = 0;
 
 async function initApp() {
   const updateEl = document.getElementById("last-update");
@@ -11,6 +13,10 @@ async function initApp() {
     const response = await fetch("https://joinville-alerta-v2.onrender.com/api/v1/status-geral");
     const result = await response.json();
     const data = result.data;
+
+    // Guarda métricas globais para cálculo dinâmico nos bairros
+    currentChuva = data.chuva_24h_mm || 0;
+    currentMare = data.mare_babitonga_m || 0;
 
     // 2. Atualiza o Header com o timestamp do servidor
     if (updateEl) {
@@ -40,16 +46,16 @@ async function initApp() {
 
     // 4. Atualiza Métricas na Tela
     const rainEl = document.getElementById("m-rain");
-    if (rainEl) rainEl.textContent = `${data.chuva_24h_mm.toFixed(1)} mm`;
+    if (rainEl) rainEl.textContent = `${currentChuva.toFixed(1)} mm`;
 
     const tideEl = document.getElementById("m-tide");
-    if (tideEl) tideEl.textContent = `${data.mare_babitonga_m.toFixed(2)} m`;
+    if (tideEl) tideEl.textContent = `${currentMare.toFixed(2)} m`;
 
   } catch (err) {
     console.warn("Falha ao conectar na API Python (usando modo contingência):", err);
   }
 
-  // 5. Carrega a lista de bairros local
+  // 5. Carrega a lista de bairros local e renderiza dinamicamente
   try {
     const res = await fetch("mock-data.json");
     const data = await res.json();
@@ -72,15 +78,30 @@ function renderBairros(bairros) {
   }
 
   bairros.forEach(b => {
+    // 🧠 LÓGICA DINÂMICA DE RISCO (Calculada em Tempo Real via Primeiros Princípios)
+    let riscoDinamico = "normal";
+    let statusDinamico = "Normal - Sem risco no momento";
+
+    if (currentMare >= b.cota_m && currentChuva >= 20) {
+      riscoDinamico = "critico";
+      statusDinamico = "Crítico - Alagamento Impraticável nas Vias";
+    } else if (currentMare >= b.cota_m) {
+      riscoDinamico = "atencao";
+      statusDinamico = "Atenção - Transbordamento de Galerias / Represamento";
+    } else if (currentChuva >= 30) {
+      riscoDinamico = "atencao";
+      statusDinamico = "Atenção - Acúmulo Pluvial nas Enxurradas";
+    }
+
     const card = document.createElement("div");
-    card.className = `bairro-card ${b.risco}`;
+    card.className = `bairro-card ${riscoDinamico}`;
 
     const ruasHtml = b.ruas_afetadas.map(rua => `<li>${rua}</li>`).join("");
 
     card.innerHTML = `
       <div class="bairro-title">
         <span>📍 ${b.nome} (Cota: ${b.cota_m}m)</span>
-        <span style="font-size: 0.8rem; opacity: 0.9;">${b.status}</span>
+        <span style="font-size: 0.8rem; opacity: 0.9;">${statusDinamico}</span>
       </div>
       <ul class="ruas-list">
         ${ruasHtml}
