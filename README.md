@@ -1,7 +1,7 @@
 # 🌊 joinville-alerta-v2
 
 > **Plataforma autônoma e de latência zero para prevenção de alagamentos estuarinos e pluviais em Joinville/SC.**  
-> *Engenharia orientada a Primeiros Princípios: tempo de resposta < 5ms, resiliência offline (PWA), inteligência artificial contextual e custo de infraestrutura R$ 0,00.*
+> *Engenharia orientada a Primeiros Princípios: tempo de resposta < 5ms, geolocalização nativa por GPS, resiliência offline (PWA), inteligência artificial contextual e custo de infraestrutura R$ 0,00.*
 
 ---
 
@@ -12,6 +12,7 @@ Joinville possui um histórico crítico de alagamentos causados pela combinaçã
 A primeira versão de aplicações do gênero apresentava gargalos claros de engenharia:
 * **Latência e Gargalos de Rede:** Consultas feitas diretamente no navegador do usuário a APIs externas tornavam a aplicação lenta e vulnerável a limites de requisição (*rate limits*).
 * **Vulnerabilidade a Quedas de Conectividade:** Durante tempestades severas, quedas de sinal móvel/internet impediam o acesso ao diagnóstico em tempo real.
+* **Fricção de Interface:** Exigência de busca manual do bairro por parte de motoristas e moradores em situações de emergência.
 * **Alertas Rígidos:** Mensagens baseadas unicamente em regras de `if/else` que não explicavam o impacto real para o morador de cada região.
 * **Insegurança:** Risco de vazamento de chaves de API e segredos diretamente no código JavaScript do cliente.
 
@@ -21,6 +22,7 @@ A primeira versão de aplicações do gênero apresentava gargalos claros de eng
 
 O **`joinville-alerta-v2`** foi desenvolvido para resolver esses gargalos através de um ecossistema autônomo, desacoplado e resiliente:
 * Entregar um painel com tempo de resposta instantâneo (**< 5ms**) operando sobre cache em memória RAM.
+* **Geolocalização Ativa por GPS (Zero Fricção):** Identificação automática do bairro mais próximo via coordenadas geográficas reais.
 * **Arquitetura PWA Offline-First:** Garantir funcionamento ininterrupto mesmo em cenários de queda total de internet durante tempestades na cidade.
 * Processar telemetria em tempo real (chuva 24h/48h, maré, saturação do solo e vetor de vento) e traduzir dados técnicos brutos em orientações claras em linguagem humana utilizando IA Generativa.
 * Garantir isolamento absoluto de credenciais e operação contínua 24/7 com custo zero de hospedagem.
@@ -29,19 +31,19 @@ O **`joinville-alerta-v2`** foi desenvolvido para resolver esses gargalos atrav�
 
 ## 📦 O Que o Sistema Entrega
 
+* **Geolocalização por Proximidade (GPS):** Cálculo em tempo real da distância em quilômetros até as coordenadas dos bairros de Joinville através da fórmula de Haversine, aplicando o filtro de risco instantaneamente.
 * **PWA Instalável (Progressive Web App):** Aplicação que pode ser "instalada" na tela inicial do smartphone/PC e utilizada sem dependência de loja de aplicativos.
 * **Resiliência Offline-First:** O `Service Worker` intercepta requisições e serve os dados armazenados em cache local durante apagões de rede.
 * **Telemetria Urbana Multi-Variável:** Monitoramento contínuo da chuva acumulada (24h/48h), índice de saturação da bacia, velocidade/direção do vento e elevação hidrometeorológica da maré.
 * **Alerta Humanizado por IA:** Diagnóstico dinâmico gerado pelo agente inteligente interpretando a gravidade da situação.
 * **Matriz de Risco Topográfica:** Classificação de áreas críticas e vias públicas com base nas cotas de altitude (em metros) em relação ao nível do mar.
-* **Filtro Dinâmico:** Busca em tempo real por ruas e bairros afetados diretamente na interface.
 
 ---
 
 ## 🛠️ Tecnologias & Stack
 
 * **Back-End:** Python 3.11+, FastAPI, Uvicorn.
-* **Front-End & PWA:** HTML5 Semântico, CSS3 Moderno, JavaScript ES Modules, Web App Manifest (`manifest.json`) e Service Worker (`sw.js`).
+* **Front-End & PWA:** HTML5 Semântico, CSS3 Moderno, JavaScript ES Modules (Geolocalização NAtiva / Haversine), Web App Manifest (`manifest.json`) e Service Worker (`sw.js`).
 * **Hospedagem & Infraestrutura:** 
   * **Render:** Hospedagem da API Python (Web Service Containerized).
   * **GitHub Pages:** Hospedagem estática e distribuída do Front-End PWA.
@@ -69,11 +71,11 @@ O **`joinville-alerta-v2`** foi desenvolvido para resolver esses gargalos atrav�
 
 ## ⚙️ Como Foi Feito (Decisões de Engenharia)
 
-* **Resiliência PWA & Service Worker (`sw.js`):** Adotou-se a estratégia *Network First with Cache Fallback*. Durante o uso normal, o sistema atualiza silenciosamente os dados no dispositivo do usuário. Em caso de perda de conexão com a internet durante a tempestade, o Service Worker responde instantaneamente com a interface e o último estado em memória, mantendo o cidadão informado.
+* **Geolocalização Geográfica (Fórmula de Haversine):** O `app.js` solicita as coordenadas GPS nativas do navegador e executa o cálculo de distância em grandes círculos ($R = 6371\text{ km}$) em relação aos centróides dos bairros mapeados de Joinville, destacando e filtrando a localização atual sem exigir digitação.
+* **Resiliência PWA & Service Worker (`sw.js`):** Adotou-se a estratégia *Network First with Cache Fallback*. Durante o uso normal, o sistema atualiza silenciosamente os dados no dispositivo do usuário. Em caso de perda de conexão, o Service Worker responde com a interface e o último estado em memória.
 * **Índice Antecedente de Chuva (Saturação do Solo):** O sistema analisa o volume de precipitação das **48 horas anteriores** para modelar a capacidade de absorção do solo. Chuvas recentes acumuladas aplicam um **Multiplicador de Saturação ($1.20\times$ a $1.35\times$)** na equação de risco.
 * **Modelo Hidrometeorológico Híbrido (Maré + Vento Sul):** O `scheduler.py` calcula o nível real da água somando a onda astronômica M2 à sobre-elevação meteorológica provocada por ventos do quadrante **Sul e Sudeste ($135^\circ$ a $225^\circ$)**.
 * **In-Memory Cache Store:** Dados salvos na memória RAM do servidor para garantir respostas em sub-5ms.
-* **Background Worker Autônomo:** O `APScheduler` pré-calcula a matriz de risco em segundo plano a cada 15 minutos sem que o usuário aguarde processamento.
 
 ---
 
