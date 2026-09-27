@@ -8,7 +8,7 @@
   <!-- Suporte e Configurações de PWA -->
   <link rel="manifest" href="manifest.json" />
   <meta name="theme-color" content="#0f172a" />
-  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
   <link rel="apple-touch-icon" href="https://cdn-icons-png.flaticon.com/512/5664/5664993.png" />
 
@@ -44,8 +44,11 @@
       </div>
     </section>
 
-    <!-- Barra de Pesquisa de Ruas -->
+    <!-- Geolocalização & Barra de Pesquisa de Ruas -->
     <section class="search-box">
+      <button id="btn-location" class="location-btn" type="button">
+        📍 Usar minha localização
+      </button>
       <input 
         type="text" 
         id="street-search" 
