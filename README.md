@@ -20,14 +20,14 @@ A primeira versão de aplicações do gênero apresentava gargalos claros de eng
 
 O **`joinville-alerta-v2`** foi desenvolvido para resolver esses gargalos através de um ecossistema autônomo, desacoplado e resiliente:
 * Entregar um painel com tempo de resposta instantâneo (**< 5ms**) operando sobre cache em memória RAM.
-* Processar telemetria em tempo real (chuva, maré e vetor de vento) e traduzir dados técnicos brutos em orientações claras em linguagem humana utilizando IA Generativa.
+* Processar telemetria em tempo real (chuva 24h/48h, maré, saturação do solo e vetor de vento) e traduzir dados técnicos brutos em orientações claras em linguagem humana utilizando IA Generativa.
 * Garantir isolamento absoluto de credenciais e operação contínua 24/7 com custo zero de hospedagem.
 
 ---
 
 ## 📦 O Que o Sistema Entrega
 
-* **Telemetria Urbana em Tempo Real:** Monitoramento contínuo da chuva acumulada nas últimas 24 horas, velocidade/direção do vento e elevação hidrometeorológica da maré no estuário de Joinville.
+* **Telemetria Urbana Multi-Variável:** Monitoramento contínuo da chuva acumulada (24h/48h), índice de saturação da bacia, velocidade/direção do vento e elevação hidrometeorológica da maré.
 * **Alerta Humanizado por IA:** Diagnóstico dinâmico gerado pelo agente inteligente interpretando a gravidade da situação.
 * **Matriz de Risco Topográfica:** Classificação de áreas críticas e vias públicas com base nas cotas de altitude (em metros) em relação ao nível do mar.
 * **Filtro Dinâmico:** Busca em tempo real por ruas e bairros afetados diretamente na interface.
@@ -58,24 +58,25 @@ O **`joinville-alerta-v2`** foi desenvolvido para resolver esses gargalos atrav�
 
 ## 🌐 APIs Externas & Agente Inteligente
 
-* **Open-Meteo API:** Coleta de telemetria pluviométrica em tempo real (chuva acumulada em 24h) e dinâmica dos ventos (`wind_speed_10m` e `wind_direction_10m`) utilizando as coordenadas geográficas exatas do município de Joinville.
-* **Modelo Hidrometeorológico Híbrido da Babitonga:** Algoritmo calibrado que une o componente astronômico do ciclo de maré M2 ($12.42\text{h}$) à sobre-elevação meteorológica causada pelo represamento do Vento Sul/Sudeste.
+* **Open-Meteo API:** Coleta de telemetria pluviométrica em tempo real (chuva 24h e histórico de 48h com `past_days=2`) e dinâmica dos ventos (`wind_speed_10m` e `wind_direction_10m`) para as coordenadas de Joinville.
+* **Modelo Hidrometeorológico Híbrido da Babitonga:** Algoritmo calibrado que une o componente astronômico M2 ($12.42\text{h}$) à sobre-elevação meteorológica por represamento de Vento Sul/Sudeste ($135^\circ$ a $225^\circ$).
 * **Agente Mistral AI (`mistral-small-latest`):** Processamento de Linguagem Natural (NLP) responsável por interpretar a combinação de chuva, maré e nível de risco, gerando sínteses explicativas para a população.
 
 ---
 
 ## ⚙️ Como Foi Feito (Decisões de Engenharia)
 
-* **Modelo Hidrometeorológico Híbrido (Maré + Vento Sul):** O sistema não utiliza apenas simulação puramente teórica da maré. O `scheduler.py` calcula o nível real da água somando a onda astronômica M2 à sobre-elevação meteorológica provocada por ventos do quadrante **Sul e Sudeste ($135^\circ$ a $225^\circ$)**, que represam a Baía de Babitonga e dificultam o escoamento do Rio Cachoeira.
-* **In-Memory Cache Store:** Eliminou-se a necessidade de banco de dados para armazenar telemetria volátil. Os dados processados ficam salvos na memória RAM do servidor, garantindo respostas em < 5ms.
-* **Background Worker Autônomo:** A requisição do usuário **nunca aguarda** a consulta a APIs externas ou à IA. O `APScheduler` pré-calcula a matriz de risco em segundo plano a cada 15 minutos.
-* **Isolamento Total de Segredos:** A chave `MISTRAL_API_KEY` fica armazenada estritamente nas variáveis de ambiente do servidor na nuvem, sem qualquer exposição no código do cliente ou no repositório.
+* **Índice Antecedente de Chuva (Saturação do Solo):** O sistema analisa o volume de precipitação das **48 horas anteriores** para modelar a capacidade de absorção do solo. Chuvas recentes acumuladas aplicam um **Multiplicador de Saturação ($1.20\times$ a $1.35\times$)** na equação de risco, prevendo enxurradas com maior precisão física.
+* **Modelo Hidrometeorológico Híbrido (Maré + Vento Sul):** O `scheduler.py` calcula o nível real da água somando a onda astronômica M2 à sobre-elevação meteorológica provocada por ventos do quadrante **Sul e Sudeste ($135^\circ$ a $225^\circ$)**, que dificultam o escoamento do Rio Cachoeira.
+* **In-Memory Cache Store:** Dados salvos na memória RAM do servidor para garantir respostas em sub-5ms sem sobrecarregar serviços externos.
+* **Background Worker Autônomo:** O `APScheduler` pré-calcula a matriz de risco em segundo plano a cada 15 minutos sem que o usuário aguarde processamento.
+* **Isolamento Total de Segredos:** Variáveis de ambiente como a `MISTRAL_API_KEY` totalmente isoladas no servidor.
 
 ---
 
 ## ⚠️ Limitações Conhecidas do MVP
 
-* **Altimetria Agregada por Bairro:** Na versão atual (v2), a cota topográfica de altitude (ex: 1.2m, 1.5m) é um atributo associado à zona/bairro. As ruas são cadastradas como uma lista descritiva de vias críticas vinculadas àquela cota.
+* **Altimetria Agregada por Bairro:** Na versão atual (v2), a cota topográfica de altitude (ex: 1.2m, 1.5m) é um atributo associado à zona/bairro.
 * **Microrelevo:** No mundo real, uma rua extensa pode cruzar variações de cota ao longo do seu trajeto.
 * **Visão v3 (Roadmap Futuro):** Ingestão de arquivos GeoJSON e Shapefiles do SIMGeo Joinville para obter a cota altimétrica georreferenciada individualmente por trecho de logradouro.
 
