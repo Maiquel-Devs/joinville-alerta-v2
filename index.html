@@ -4,6 +4,14 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>joinville-alerta-v2 | Emergência de Alagamentos</title>
+  
+  <!-- Suporte e Configurações de PWA -->
+  <link rel="manifest" href="manifest.json" />
+  <meta name="theme-color" content="#0f172a" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <link rel="apple-touch-icon" href="https://cdn-icons-png.flaticon.com/512/5664/5664993.png" />
+
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
@@ -56,7 +64,18 @@
     <p>joinville-alerta-v2 • Informação comunitária direta ao cidadão</p>
   </footer>
 
+  <!-- Script Principal do App -->
   <script type="module" src="app.js"></script>
-  <script src="app.js"></script>
+
+  <!-- Registro do Service Worker PWA -->
+  <script>
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('./sw.js')
+          .then((reg) => console.log('[PWA] Service Worker registrado com sucesso:', reg.scope))
+          .catch((err) => console.error('[PWA] Falha ao registrar Service Worker:', err));
+      });
+    }
+  </script>
 </body>
 </html>
