@@ -33,14 +33,14 @@ def calculate_tide(wind_speed: float = 0.0, wind_direction: int = 0) -> float:
     return round(max(0.4, mare_final), 2)
 
 async def update_telemetry_job():
-    print("[CRON]: Buscando telemetria de chuva, vento e maré em Joinville...")
-    # URL atualizada com os parâmetros de vento (velocidade e direção)
+    print("[CRON]: Buscando telemetria de chuva (24h/48h), vento e maré em Joinville...")
+    # URL atualizada com past_days=2 para calcular a saturação do solo
     url = (
         "https://api.open-meteo.com/v1/forecast"
         "?latitude=-26.3045&longitude=-48.8456"
         "&current=precipitation,wind_speed_10m,wind_direction_10m"
         "&hourly=precipitation"
-        "&past_days=1&forecast_days=1"
+        "&past_days=2&forecast_days=1"
         "&timezone=America%2FSao_Paulo"
     )
     
@@ -49,34 +49,46 @@ async def update_telemetry_job():
             res = await client.get(url)
             data = res.json()
             
-            # 1. Leitura da Chuva acumulada (24h)
-            rain_24h = sum(data.get("hourly", {}).get("precipitation", [])[:24])
+            hourly_rain = data.get("hourly", {}).get("precipitation", [])
             
-            # 2. Telemetria do Vento Atual
+            # 1. Leitura da Chuva Recente (Últimas 24h)
+            rain_24h = sum(hourly_rain[-24:]) if len(hourly_rain) >= 24 else 0.0
+            
+            # 2. Leitura da Chuva Pregressa (48h atrás até 24h atrás) -> Saturação do Solo
+            rain_past_48h = sum(hourly_rain[:-24]) if len(hourly_rain) > 24 else 0.0
+            
+            # Fator de Saturação da Bacia (Solo/Esponja)
+            saturation_factor = 1.0
+            if rain_past_48h >= 70.0:
+                saturation_factor = 1.35  # Solo extremamente saturado
+            elif rain_past_48h >= 40.0:
+                saturation_factor = 1.20  # Solo com baixa capacidade de absorção
+                
+            # 3. Telemetria do Vento Atual
             current = data.get("current", {})
             wind_speed = current.get("wind_speed_10m", 0.0)      # em km/h
             wind_direction = current.get("wind_direction_10m", 0) # em graus (0-360)
             
-            # 3. Cálculo da Maré ajustada pelo Vento Real
+            # 4. Cálculo da Maré ajustada pelo Vento Real
             tide_m = calculate_tide(wind_speed, wind_direction)
             
-            # 4. Equação de Risco
-            rain_load = rain_24h
+            # 5. Equação de Risco Ponderada por Saturação + Maré
+            rain_effective = rain_24h * saturation_factor
             tide_factor = 1.7 if tide_m >= 2.0 else (1.35 if tide_m >= 1.5 else 1.0)
-            composite = rain_load * tide_factor
+            composite = rain_effective * tide_factor
             
             nivel = "NORMAL"
-            if composite >= 80 or (tide_m >= 2.10 and rain_load >= 30):
+            if composite >= 80 or (tide_m >= 2.10 and rain_24h >= 30):
                 nivel = "CRITICO"
-            elif composite >= 50 or (tide_m >= 1.60 and rain_load >= 20):
+            elif composite >= 50 or (tide_m >= 1.60 and rain_24h >= 20):
                 nivel = "ALTO"
             elif composite >= 30 or tide_m >= 1.50:
                 nivel = "ATENCAO"
 
-            # 5. Resumo da Inteligência Artificial
+            # 6. Resumo da Inteligência Artificial
             ai_summary = await generate_ai_summary(nivel, rain_24h, tide_m)
             
-            # 6. Horário local de Joinville/Brasília (UTC-3)
+            # 7. Horário local de Joinville/Brasília (UTC-3)
             horario_joinville = datetime.now(ZoneInfo("America/Sao_Paulo")).strftime("%H:%M")
             
             payload = {
@@ -88,6 +100,6 @@ async def update_telemetry_job():
             }
             
             update_cache(payload)
-            print(f"[CRON]: In-Memory Cache atualizado! Maré: {tide_m}m | Vento: {wind_speed}km/h ({wind_direction}°)")
+            print(f"[CRON]: Cache Atualizado! Maré: {tide_m}m | Vento: {wind_speed}km/h ({wind_direction}°) | Saturação Solo: {saturation_factor}x (Chuva 48h: {round(rain_past_48h, 1)}mm)")
     except Exception as e:
         print(f"[ERRO CRON]: {e}")
