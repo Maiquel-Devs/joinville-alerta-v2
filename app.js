@@ -1,8 +1,34 @@
-// app.js - Integração com a API FastAPI e Risco Dinâmico por Bairro
+// app.js - Integração com a API FastAPI, Risco Dinâmico por Bairro e Geolocalização GPS
 
 let allBairros = [];
 let currentMare = 0;
 let currentChuva = 0;
+
+// Coordenadas centrais aproximadas dos bairros em Joinville para cálculo geográfico de proximidade
+const COORDENADAS_BAIRROS = {
+  "Bucarein": { lat: -26.3150, lon: -48.8420 },
+  "Centro": { lat: -26.3045, lon: -48.8456 },
+  "Boa Vista": { lat: -26.2980, lon: -48.8280 },
+  "Fátima": { lat: -26.3300, lon: -48.8320 },
+  "Guanabara": { lat: -26.3210, lon: -48.8290 },
+  "Comasa": { lat: -26.2850, lon: -48.8150 },
+  "Aventureiro": { lat: -26.2580, lon: -48.8120 },
+  "Vila Nova": { lat: -26.2880, lon: -48.9050 },
+  "Anita Garibaldi": { lat: -26.3180, lon: -48.8550 },
+  "Jardim Sofia": { lat: -26.2420, lon: -48.8350 }
+};
+
+// Fórmula de Haversine para calcular distância real em quilômetros
+function calcularDistanciaKm(lat1, lon1, lat2, lon2) {
+  const R = 6371; // Raio da Terra em km
+  const dLat = (lat2 - lat1) * Math.PI / 180;
+  const dLon = (lon2 - lon1) * Math.PI / 180;
+  const a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+            Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+            Math.sin(dLon / 2) * Math.sin(dLon / 2);
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+  return R * c;
+}
 
 async function initApp() {
   const updateEl = document.getElementById("last-update");
@@ -130,6 +156,55 @@ if (searchInput) {
     });
 
     renderBairros(filtered);
+  });
+}
+
+// Lógica de Geolocalização por GPS
+const btnLocation = document.getElementById("btn-location");
+if (btnLocation) {
+  btnLocation.addEventListener("click", () => {
+    if (!navigator.geolocation) {
+      alert("Geolocalização não é suportada pelo seu navegador.");
+      return;
+    }
+
+    btnLocation.textContent = "⌛ Obtendo localização...";
+
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        const userLat = position.coords.latitude;
+        const userLon = position.coords.longitude;
+
+        let bairroMaisProximo = null;
+        let menorDistancia = Infinity;
+
+        // Itera sobre as coordenadas dos bairros conhecidos
+        for (const [bairro, coords] of Object.entries(COORDENADAS_BAIRROS)) {
+          const dist = calcularDistanciaKm(userLat, userLon, coords.lat, coords.lon);
+          if (dist < menorDistancia) {
+            menorDistancia = dist;
+            bairroMaisProximo = bairro;
+          }
+        }
+
+        if (bairroMaisProximo) {
+          btnLocation.textContent = `📍 Próximo a: ${bairroMaisProximo} (${menorDistancia.toFixed(1)} km)`;
+          
+          // Aplica o filtro automaticamente para o bairro identificado
+          if (searchInput) {
+            searchInput.value = bairroMaisProximo;
+            searchInput.dispatchEvent(new Event("input"));
+          }
+        } else {
+          btnLocation.textContent = "📍 Usar minha localização";
+          alert("Não foi possível identificar um bairro mapeado próximo.");
+        }
+      },
+      (error) => {
+        btnLocation.textContent = "📍 Usar minha localização";
+        alert("Não foi possível obter sua localização. Verifique as permissões de GPS no navegador.");
+      }
+    );
   });
 }
 

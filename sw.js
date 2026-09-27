@@ -37,8 +37,8 @@ self.addEventListener('activate', (event) => {
 
 // 3. Interceptação de Rede: Estratégia Network First com Fallback para Cache
 self.addEventListener('fetch', (event) => {
-  // Ignora requisições de extensões do navegador ou rotas não-GET
-  if (event.request.method !== 'GET') return;
+  // Ignora requisições que não sejam GET ou que venham de extensões do navegador (ex: chrome-extension://)
+  if (event.request.method !== 'GET' || !event.request.url.startsWith('http')) return;
 
   event.respondWith(
     fetch(event.request)
