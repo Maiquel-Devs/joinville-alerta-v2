@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>Teste 3.0 — camadas e ruas</title>
+  <link rel="stylesheet" href="../vendor/leaflet/leaflet.css" />
+  <style>
+    :root { --fundo: #fff; --texto: #1b1f23; --suave: #5f6b76; --borda: #d0d7de; --destaque: #0b6bcb; }
+    @media (prefers-color-scheme: dark) {
+      :root { --fundo: #1b1f23; --texto: #e6edf3; --suave: #9aa7b3; --borda: #3a424a; --destaque: #58a6ff; }
+    }
+    html, body { height: 100%; margin: 0; font: 14px/1.4 system-ui, sans-serif; color: var(--texto); background: var(--fundo); }
+    #map { position: absolute; inset: 0; background: #e9ecef; }
+    #painel {
+      position: absolute; z-index: 1000; background: var(--fundo); color: var(--texto);
+      border: 1px solid var(--borda); border-radius: 10px; box-shadow: 0 2px 12px #0004;
+      overflow: auto; padding: 10px 12px; box-sizing: border-box;
+      top: 10px; right: 10px; width: 340px; max-height: calc(100% - 20px);
+    }
+    @media (max-width: 640px) {
+      #painel { top: auto; right: 0; left: 0; bottom: 0; width: auto; max-height: 48%; border-radius: 12px 12px 0 0; padding-bottom: calc(10px + env(safe-area-inset-bottom, 0px)); }
+    }
+    h1 { font-size: 15px; margin: 0 0 6px; }
+    h2 { font-size: 12px; text-transform: uppercase; letter-spacing: .04em; color: var(--suave); margin: 12px 0 4px; }
+    label { display: flex; align-items: center; gap: 8px; padding: 4px 0; min-height: 24px; }
+    label input { width: 18px; height: 18px; margin: 0; }
+    .cor { width: 14px; height: 14px; border-radius: 3px; flex: none; border: 1px solid #0003; }
+    .linha { display: flex; flex-wrap: wrap; gap: 6px; }
+    button, select { font: inherit; padding: 8px 10px; border-radius: 8px; border: 1px solid var(--borda); background: var(--fundo); color: var(--texto); min-height: 40px; }
+    button { cursor: pointer; }
+    button.principal { background: var(--destaque); color: #fff; border-color: var(--destaque); }
+    #resultado { border: 1px solid var(--borda); border-radius: 8px; padding: 8px; margin-top: 6px; }
+    #resultado.vazio { color: var(--suave); }
+    ul { margin: 4px 0 0; padding-left: 18px; }
+    table { border-collapse: collapse; width: 100%; font-size: 12px; }
+    td, th { text-align: left; padding: 2px 6px 2px 0; }
+    .nota { color: var(--suave); font-size: 12px; margin: 4px 0 0; }
+    .aviso { font-weight: 600; }
+  </style>
+</head>
+<body>
+  <div id="map"></div>
+
+  <details id="painel" open>
+    <summary><strong>Teste 3.0 — manchas e ruas</strong></summary>
+
+    <h2>Camadas</h2>
+    <div id="lista-camadas"></div>
+    <label><input type="checkbox" id="ck-ruas" checked /><span class="cor" style="background:#7048e8"></span> Ruas em risco (<span id="ruas-info">carregando…</span>)</label>
+    <label><input type="checkbox" id="ck-base" /> Mapa base OSM (online; ver nota)</label>
+
+    <h2>Vila Nova</h2>
+    <div class="linha">
+      <select id="vn-status" aria-label="Cenário"><option>Atual</option><option>Futuro</option></select>
+      <select id="vn-tr" aria-label="Tempo de retorno">
+        <option>5 anos</option><option>10 anos</option><option selected>25 anos</option><option>50 anos</option>
+      </select>
+    </div>
+    <p class="nota">Decidido: Atual, 25 anos. Mude só para comparar (as ruas não mudam; foram geradas com a decisão).</p>
+
+    <h2>Ruas de amostra (2.7)</h2>
+    <div class="linha" id="amostras"></div>
+    <div id="amostra-info" class="nota"></div>
+
+    <h2>Onde estou? (ponto-em-polígono)</h2>
+    <div class="linha">
+      <button class="principal" id="btn-gps">Usar minha localização</button>
+      <button id="btn-limpar">Limpar ponto</button>
+    </div>
+    <p class="nota">Ou toque/clique no mapa para testar um ponto. GPS exige https ou localhost.</p>
+    <div id="resultado" class="vazio">Nenhum ponto escolhido.</div>
+
+    <h2>Peso e tempo (3.2 / 3.6)</h2>
+    <table id="metricas"><thead><tr><th>Arquivo</th><th>KB</th><th>gzip KB</th><th>ms</th></tr></thead><tbody></tbody></table>
+    <p class="nota" id="metricas-extra"></p>
+
+    <p class="nota">Teste de verificação, não é o app. Os polígonos são manchas modeladas do PDDU (2011): fora delas também há risco de alagar. Dados: PDDU Joinville · © colaboradores do OpenStreetMap (ODbL). Defesa Civil: 199.</p>
+  </details>
+
+  <script src="../vendor/leaflet/leaflet.js"></script>
+  <script src="pip.js"></script>
+  <script src="camadas.js"></script>
+</body>
+</html>

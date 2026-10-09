@@ -16,3 +16,5 @@ ENV/
 # IDEs
 .vscode/
 .idea/
+# Dados brutos do pipeline (shapefiles do PDDU e JSON do Overpass)
+data/raw/

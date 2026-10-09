@@ -4,7 +4,8 @@ from fastapi.middleware.cors import CORSMiddleware
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from contextlib import asynccontextmanager
 
-from cache_store import get_cached_alert
+from cache_store import status_geral
+from config import CICLO_MIN
 from scheduler import update_telemetry_job
 
 scheduler = AsyncIOScheduler()
@@ -14,7 +15,7 @@ async def lifespan(app: FastAPI):
     # Executa a coleta imediatamente ao subir o servidor
     await update_telemetry_job()
     # Agenda a atualização a cada 15 minutos
-    scheduler.add_job(update_telemetry_job, "interval", minutes=15)
+    scheduler.add_job(update_telemetry_job, "interval", minutes=CICLO_MIN)
     scheduler.start()
     yield
     scheduler.shutdown()
@@ -33,4 +34,4 @@ app.add_middleware(
 @app.get("/api/v1/status-geral")
 async def get_status_geral():
     # Retorna o resultado direto da RAM (< 5ms)
-    return get_cached_alert()
+    return status_geral()

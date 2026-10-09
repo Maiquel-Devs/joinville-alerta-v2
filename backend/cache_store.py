@@ -1,17 +1,39 @@
 # backend/cache_store.py
+# Cache em RAM. Guarda o último resultado VÁLIDO e o texto da IA.
+from config import VALIDADE_MIN
 
-# Estrutura na memória RAM para resposta instantânea
-LATEST_ALERT_CACHE = {
-    "status": "NORMAL",
-    "data": None,
-    "last_updated": None
-}
+_ultimo: dict | None = None
+# (nivel, faixas ativas) do último texto gerado, para só chamar a IA quando mudar
+_chave_texto: tuple | None = None
+_texto: dict | None = None
 
-def update_cache(data: dict):
-    global LATEST_ALERT_CACHE
-    LATEST_ALERT_CACHE["data"] = data
-    LATEST_ALERT_CACHE["status"] = data.get("nivel", "NORMAL")
-    LATEST_ALERT_CACHE["last_updated"] = data.get("timestamp")
 
-def get_cached_alert():
-    return LATEST_ALERT_CACHE
+def guardar(resultado: dict) -> None:
+    global _ultimo
+    _ultimo = resultado
+
+
+def obter_texto(chave: tuple) -> dict | None:
+    return _texto if chave == _chave_texto else None
+
+
+def guardar_texto(chave: tuple, texto: dict) -> None:
+    global _chave_texto, _texto
+    _chave_texto, _texto = chave, texto
+
+
+def status_geral() -> dict:
+    """Cache vazio => indisponivel, nunca "normal"."""
+    if _ultimo is None:
+        return {
+            "status": "indisponivel",
+            "gerado_em": None,
+            "validade_min": VALIDADE_MIN,
+            "mare_efetiva_m": None,
+            "mare_origem": None,
+            "chuva_24h_mm": None,
+            "faixas": {},
+            "nivel": "indisponivel",
+            "texto": None,
+        }
+    return _ultimo
