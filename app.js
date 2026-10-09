@@ -3,6 +3,7 @@
 let allBairros = [];
 let currentMare = 0;
 let currentChuva = 0;
+let dadosDisponiveis = false;
 
 // Coordenadas centrais aproximadas dos bairros em Joinville para cálculo geográfico de proximidade
 const COORDENADAS_BAIRROS = {
@@ -30,55 +31,83 @@ function calcularDistanciaKm(lat1, lon1, lat2, lon2) {
   return R * c;
 }
 
+// Contingência: todas as chaves do contrato /api/v1/status-geral.
+// status "indisponivel" => nunca é exibido como "normal".
+const DADOS_CONTINGENCIA = {
+  status: "indisponivel",
+  gerado_em: null,
+  validade_min: 0,
+  mare_efetiva_m: 0.0,
+  chuva_24h_mm: 0.0,
+  faixas: {},
+  nivel: "INDISPONÍVEL",
+  texto: {
+    titulo: "Dados indisponíveis",
+    mensagem: "Não foi possível obter o estado atual. Isso não significa que não há risco de alagar. Em emergência, ligue 199 (Defesa Civil)."
+  }
+};
+
 async function initApp() {
   const updateEl = document.getElementById("last-update");
   if (updateEl) updateEl.textContent = "Sincronizando com o servidor de Joinville...";
 
+  let data = DADOS_CONTINGENCIA;
+  let online = false;
+
   try {
     // 1. Consome o endpoint da API Python (In-Memory Cache < 5ms)
     const response = await fetch("https://joinville-alerta-v2.onrender.com/api/v1/status-geral");
-    const result = await response.json();
-    const data = result.data;
-
-    // Guarda as métricas globais para o cálculo dinâmico nos cartões dos bairros
-    currentChuva = data.chuva_24h_mm || 0;
-    currentMare = data.mare_babitonga_m || 0;
-
-    // 2. Atualiza o Header com o timestamp do servidor
-    if (updateEl) {
-      updateEl.textContent = `Joinville - SC • ${data.timestamp}`;
-    }
-
-    // 3. Atualiza Card do Agente Mistral AI e aplica classe CSS
-    const badgeEl = document.getElementById("ai-risk-badge");
-    if (badgeEl) {
-      const rawNivel = data.nivel || "NORMAL";
-      const cssClass = rawNivel
-        .normalize("NFD")
-        .replace(/[\u0300-\u036f]/g, "")
-        .toUpperCase()
-        .trim();
-
-      badgeEl.textContent = `NÍVEL ${rawNivel}`;
-      badgeEl.className = `badge-risk ${cssClass}`;
-    }
-
-    const titleEl = document.getElementById("ai-title");
-    if (titleEl) titleEl.textContent = data.alerta_mistral_ai.titulo;
-
-    const msgEl = document.getElementById("ai-message");
-    if (msgEl) msgEl.textContent = data.alerta_mistral_ai.mensagem_humana;
-
-    // 4. Atualiza Métricas Globais na Tela
-    const rainEl = document.getElementById("m-rain");
-    if (rainEl) rainEl.textContent = `${currentChuva.toFixed(1)} mm`;
-
-    const tideEl = document.getElementById("m-tide");
-    if (tideEl) tideEl.textContent = `${currentMare.toFixed(2)} m`;
-
+    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+    const result = await response?.json();
+    const payload = result?.data ?? result;
+    if (payload == null || typeof payload !== "object") throw new Error("Resposta sem dados");
+    data = { ...DADOS_CONTINGENCIA, ...payload };
+    online = data.status !== "indisponivel";
   } catch (err) {
     console.warn("Falha ao conectar na API Python (usando modo contingência):", err);
+    data = DADOS_CONTINGENCIA;
   }
+
+  // Guarda as métricas globais para o cálculo dinâmico nos cartões dos bairros
+  currentChuva = Number(data?.chuva_24h_mm) || 0;
+  currentMare = Number(data?.mare_efetiva_m ?? data?.mare_babitonga_m) || 0;
+  dadosDisponiveis = online;
+
+  // 2. Atualiza o Header com o timestamp do servidor
+  if (updateEl) {
+    const quando = data?.gerado_em ?? data?.timestamp;
+    updateEl.textContent = online && quando
+      ? `Joinville - SC • ${quando}`
+      : "Joinville - SC • sem conexão com o servidor";
+  }
+
+  // 3. Atualiza Card do Agente Mistral AI e aplica classe CSS
+  const badgeEl = document.getElementById("ai-risk-badge");
+  if (badgeEl) {
+    const rawNivel = data?.nivel || "INDISPONÍVEL";
+    const cssClass = String(rawNivel)
+      .normalize("NFD")
+      .replace(/[̀-ͯ]/g, "")
+      .toUpperCase()
+      .trim();
+
+    badgeEl.textContent = `NÍVEL ${rawNivel}`;
+    badgeEl.className = `badge-risk ${cssClass}`;
+  }
+
+  const texto = data?.texto ?? data?.alerta_mistral_ai;
+  const titleEl = document.getElementById("ai-title");
+  if (titleEl) titleEl.textContent = texto?.titulo ?? DADOS_CONTINGENCIA.texto.titulo;
+
+  const msgEl = document.getElementById("ai-message");
+  if (msgEl) msgEl.textContent = texto?.mensagem ?? texto?.mensagem_humana ?? DADOS_CONTINGENCIA.texto.mensagem;
+
+  // 4. Atualiza Métricas Globais na Tela ("—" quando indisponível)
+  const rainEl = document.getElementById("m-rain");
+  if (rainEl) rainEl.textContent = online ? `${currentChuva.toFixed(1)} mm` : "—";
+
+  const tideEl = document.getElementById("m-tide");
+  if (tideEl) tideEl.textContent = online ? `${currentMare.toFixed(2)} m` : "—";
 
   // 5. Carrega a lista de bairros local e renderiza dinamicamente
   try {
@@ -107,7 +136,10 @@ function renderBairros(bairros) {
     let riscoDinamico = "NORMAL";
     let statusDinamico = "Normal - Sem risco no momento";
 
-    if (currentMare >= b.cota_m && currentChuva >= 20) {
+    if (!dadosDisponiveis) {
+      riscoDinamico = "INDISPONIVEL";
+      statusDinamico = "Indisponível - sem dados atuais (também pode alagar fora das manchas)";
+    } else if (currentMare >= b.cota_m && currentChuva >= 20) {
       riscoDinamico = "CRITICO";
       statusDinamico = "Crítico - Alagamento Impraticável nas Vias";
     } else if (currentMare >= b.cota_m) {

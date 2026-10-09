@@ -213,3 +213,11 @@ footer {
   padding-top: 10px;
   border-top: 1px solid var(--border-color);
 }
+/* Dado indisponível: neutro, nunca verde/"normal" */
+.badge-risk.INDISPONIVEL {
+  background-color: #64748b !important;
+  color: #ffffff !important;
+}
+.bairro-card.INDISPONIVEL {
+  border-left: 5px solid #64748b !important;
+}
