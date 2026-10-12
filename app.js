@@ -1,243 +1,298 @@
-// app.js - Integração com a API FastAPI, Risco Dinâmico por Bairro e Geolocalização GPS
+// app.js - Só desenha o que o back-end decidiu. Nenhuma regra de risco aqui:
+// o estado de cada faixa e o nível vêm de /api/v1/status-geral.
+(() => {
+  const API = 'https://joinville-alerta-v2.onrender.com/api/v1/status-geral';
+  const CHAVE_SALVO = 'ja2_ultimo_estado';
+  const TIMEOUT_API_MS = 60000; // o Render gratuito hiberna; a primeira resposta é lenta
 
-let allBairros = [];
-let currentMare = 0;
-let currentChuva = 0;
-let dadosDisponiveis = false;
+  // Ordem = prioridade de desenho de um trecho que está em mais de uma faixa ativa
+  // (pior primeiro). Espelha o backend (config.NIVEL_DA_FAIXA); o front não decide nível.
+  const FAIXAS = [
+    { id: 'mare_2_5', rotulo: 'Maré de 2,5 m', arq: 'data/geojson/mare_cachoeira_2_5m.geojson', cor: '#e8590c' },
+    { id: 'mare_1_6', rotulo: 'Maré de 1,6 m', arq: 'data/geojson/mare_cachoeira_1_6m.geojson', cor: '#e03131' },
+    { id: 'pluvial_vila_nova', rotulo: 'Chuva — Vila Nova', arq: 'data/geojson/inundacao_vila_nova.geojson', cor: '#1971c2' },
+    { id: 'pluvial_itaum', rotulo: 'Chuva — Itaum', arq: 'data/geojson/inundacao_itaum.geojson', cor: '#0ca678' },
+  ];
+  const RUAS_ARQ = 'data/ruas_risco.geojson';
+  const COR_INATIVA = '#94a3b8';
+  const COR_INDISPONIVEL = '#64748b';
+  // Vila Nova: decisão de 08/10/2026 (cenário Atual, 25 anos). Ver CLAUDE.md.
+  const filtroDe = (id) => (id === 'pluvial_vila_nova' ? (f) => f.properties.status_1 === 'Atual' && f.properties.tempretor === '25 anos' : undefined);
 
-// Coordenadas centrais aproximadas dos bairros em Joinville para cálculo geográfico de proximidade
-const COORDENADAS_BAIRROS = {
-  "Bucarein": { lat: -26.3150, lon: -48.8420 },
-  "Centro": { lat: -26.3045, lon: -48.8456 },
-  "Boa Vista": { lat: -26.2980, lon: -48.8280 },
-  "Fátima": { lat: -26.3300, lon: -48.8320 },
-  "Guanabara": { lat: -26.3210, lon: -48.8290 },
-  "Comasa": { lat: -26.2850, lon: -48.8150 },
-  "Aventureiro": { lat: -26.2580, lon: -48.8120 },
-  "Vila Nova": { lat: -26.2880, lon: -48.9050 },
-  "Anita Garibaldi": { lat: -26.3180, lon: -48.8550 },
-  "Jardim Sofia": { lat: -26.2420, lon: -48.8350 }
-};
+  const ROTULO_NIVEL = { atencao: 'atenção', indisponivel: 'indisponível' }; // provisório (CLAUDE.md: nomes dos níveis em aberto)
 
-// Fórmula de Haversine para calcular distância real em quilômetros
-function calcularDistanciaKm(lat1, lon1, lat2, lon2) {
-  const R = 6371; // Raio da Terra em km
-  const dLat = (lat2 - lat1) * Math.PI / 180;
-  const dLon = (lon2 - lon1) * Math.PI / 180;
-  const a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-            Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
-            Math.sin(dLon / 2) * Math.sin(dLon / 2);
-  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-  return R * c;
-}
+  const $ = (id) => document.getElementById(id);
+  const semAcento = (s) => String(s).normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
 
-// Contingência: todas as chaves do contrato /api/v1/status-geral.
-// status "indisponivel" => nunca é exibido como "normal".
-const DADOS_CONTINGENCIA = {
-  status: "indisponivel",
-  gerado_em: null,
-  validade_min: 0,
-  mare_efetiva_m: 0.0,
-  chuva_24h_mm: 0.0,
-  faixas: {},
-  nivel: "INDISPONÍVEL",
-  texto: {
-    titulo: "Dados indisponíveis",
-    mensagem: "Não foi possível obter o estado atual. Isso não significa que não há risco de alagar. Em emergência, ligue 199 (Defesa Civil)."
+  // --- estado vindo da API -------------------------------------------------------
+  let estado = { dados: null, origem: 'nenhum' }; // origem: rede | salvo | nenhum
+
+  function lerSalvo() {
+    try {
+      return JSON.parse(localStorage.getItem(CHAVE_SALVO));
+    } catch {
+      return null;
+    }
   }
-};
-
-async function initApp() {
-  const updateEl = document.getElementById("last-update");
-  if (updateEl) updateEl.textContent = "Sincronizando com o servidor de Joinville...";
-
-  let data = DADOS_CONTINGENCIA;
-  let online = false;
-
-  try {
-    // 1. Consome o endpoint da API Python (In-Memory Cache < 5ms)
-    const response = await fetch("https://joinville-alerta-v2.onrender.com/api/v1/status-geral");
-    if (!response.ok) throw new Error(`HTTP ${response.status}`);
-    const result = await response?.json();
-    const payload = result?.data ?? result;
-    if (payload == null || typeof payload !== "object") throw new Error("Resposta sem dados");
-    data = { ...DADOS_CONTINGENCIA, ...payload };
-    online = data.status !== "indisponivel";
-  } catch (err) {
-    console.warn("Falha ao conectar na API Python (usando modo contingência):", err);
-    data = DADOS_CONTINGENCIA;
+  function salvar(dados) {
+    try {
+      localStorage.setItem(CHAVE_SALVO, JSON.stringify(dados));
+    } catch {
+      /* sem armazenamento: só não guarda */
+    }
   }
 
-  // Guarda as métricas globais para o cálculo dinâmico nos cartões dos bairros
-  currentChuva = Number(data?.chuva_24h_mm) || 0;
-  currentMare = Number(data?.mare_efetiva_m ?? data?.mare_babitonga_m) || 0;
-  dadosDisponiveis = online;
-
-  // 2. Atualiza o Header com o timestamp do servidor
-  if (updateEl) {
-    const quando = data?.gerado_em ?? data?.timestamp;
-    updateEl.textContent = online && quando
-      ? `Joinville - SC • ${quando}`
-      : "Joinville - SC • sem conexão com o servidor";
+  async function buscarEstado() {
+    const ctrl = new AbortController();
+    const t = setTimeout(() => ctrl.abort(), TIMEOUT_API_MS);
+    try {
+      const res = await fetch(API, { signal: ctrl.signal });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const json = await res.json();
+      const dados = json?.data ?? json;
+      if (dados == null || typeof dados !== 'object') throw new Error('Resposta sem dados');
+      salvar(dados);
+      return { dados, origem: 'rede' };
+    } catch (e) {
+      console.warn('API indisponível, usando último estado salvo:', e);
+      const salvo = lerSalvo();
+      return salvo ? { dados: salvo, origem: 'salvo' } : { dados: null, origem: 'nenhum' };
+    } finally {
+      clearTimeout(t);
+    }
   }
 
-  // 3. Atualiza Card do Agente Mistral AI e aplica classe CSS
-  const badgeEl = document.getElementById("ai-risk-badge");
-  if (badgeEl) {
-    const rawNivel = data?.nivel || "INDISPONÍVEL";
-    const cssClass = String(rawNivel)
-      .normalize("NFD")
-      .replace(/[̀-ͯ]/g, "")
-      .toUpperCase()
-      .trim();
-
-    badgeEl.textContent = `NÍVEL ${rawNivel}`;
-    badgeEl.className = `badge-risk ${cssClass}`;
+  // Dado ausente nunca vira "normal": faixa sem estado = indisponível.
+  function estadoFaixa(id) {
+    const e = estado.dados?.status === 'indisponivel' ? null : estado.dados?.faixas?.[id];
+    return e === 'ativa' || e === 'inativa' ? e : 'indisponivel';
   }
-
-  const texto = data?.texto ?? data?.alerta_mistral_ai;
-  const titleEl = document.getElementById("ai-title");
-  if (titleEl) titleEl.textContent = texto?.titulo ?? DADOS_CONTINGENCIA.texto.titulo;
-
-  const msgEl = document.getElementById("ai-message");
-  if (msgEl) msgEl.textContent = texto?.mensagem ?? texto?.mensagem_humana ?? DADOS_CONTINGENCIA.texto.mensagem;
-
-  // 4. Atualiza Métricas Globais na Tela ("—" quando indisponível)
-  const rainEl = document.getElementById("m-rain");
-  if (rainEl) rainEl.textContent = online ? `${currentChuva.toFixed(1)} mm` : "—";
-
-  const tideEl = document.getElementById("m-tide");
-  if (tideEl) tideEl.textContent = online ? `${currentMare.toFixed(2)} m` : "—";
-
-  // 5. Carrega a lista de bairros local e renderiza dinamicamente
-  try {
-    const res = await fetch("mock-data.json");
-    const data = await res.json();
-    allBairros = data.bairros;
-    renderBairros(allBairros);
-  } catch (e) {
-    console.warn("Erro ao carregar lista de bairros:", e);
+  function idadeMin() {
+    const t = Date.parse(estado.dados?.gerado_em);
+    return Number.isNaN(t) ? null : (Date.now() - t) / 60000;
   }
-}
-
-function renderBairros(bairros) {
-  const container = document.getElementById("bairros-container");
-  if (!container) return;
-  
-  container.innerHTML = "";
-
-  if (bairros.length === 0) {
-    container.innerHTML = `<div style="text-align:center; padding: 20px; color: #94a3b8;">Nenhuma rua ou bairro encontrado.</div>`;
-    return;
+  function dadoAntigo() {
+    const idade = idadeMin();
+    const validade = Number(estado.dados?.validade_min);
+    return idade != null && validade > 0 && idade > validade;
   }
+  const quando = (iso) => new Date(iso).toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' });
 
-  bairros.forEach(b => {
-    // 🧠 LÓGICA DINÂMICA DE RISCO (Primeiros Princípios)
-    let riscoDinamico = "NORMAL";
-    let statusDinamico = "Normal - Sem risco no momento";
+  // --- painel de texto -----------------------------------------------------------
+  function renderPainel() {
+    const d = estado.dados;
+    const nivel = d && d.status !== 'indisponivel' ? semAcento(d.nivel || 'indisponivel') : 'indisponivel';
 
-    if (!dadosDisponiveis) {
-      riscoDinamico = "INDISPONIVEL";
-      statusDinamico = "Indisponível - sem dados atuais (também pode alagar fora das manchas)";
-    } else if (currentMare >= b.cota_m && currentChuva >= 20) {
-      riscoDinamico = "CRITICO";
-      statusDinamico = "Crítico - Alagamento Impraticável nas Vias";
-    } else if (currentMare >= b.cota_m) {
-      riscoDinamico = "ATENCAO";
-      statusDinamico = "Atenção - Transbordamento de Galerias / Represamento";
-    } else if (currentChuva >= 30) {
-      riscoDinamico = "ATENCAO";
-      statusDinamico = "Atenção - Acúmulo Pluvial nas Enxurradas";
+    const badge = $('ai-risk-badge');
+    badge.textContent = nivel === 'indisponivel' ? 'DADOS INDISPONÍVEIS' : `NÍVEL ${(ROTULO_NIVEL[nivel] || nivel).toUpperCase()}`;
+    badge.className = `badge-risk nivel-${nivel}`;
+    $('ai-card').className = `ai-card nivel-${nivel}`;
+
+    const texto = d?.texto;
+    if (nivel === 'indisponivel') {
+      $('ai-title').textContent = 'Dados indisponíveis';
+      $('ai-message').textContent = 'Não foi possível obter o estado atual. Isso não significa que não há risco de alagar.';
+    } else {
+      $('ai-title').textContent = texto?.titulo ?? 'Veja o mapa abaixo';
+      $('ai-message').textContent = texto?.mensagem ?? 'Áreas fora das manchas também podem alagar.';
     }
 
-    const card = document.createElement("div");
-    // Injeta a classe em maiúsculas para acionar o border-left correto do style.css
-    card.className = `bairro-card ${riscoDinamico}`;
+    const ok = d && d.status !== 'indisponivel';
+    const chuva = Number(d?.chuva_24h_mm);
+    const mare = Number(d?.mare_efetiva_m);
+    $('m-rain').textContent = ok && d.chuva_24h_mm != null && !Number.isNaN(chuva) ? `${chuva.toFixed(1)} mm` : '—';
+    $('m-tide').textContent = ok && d.mare_efetiva_m != null && !Number.isNaN(mare) ? `${mare.toFixed(2)} m` : '—';
+    $('m-tide-label').textContent = d?.mare_origem === 'medida' ? 'Maré (medida)' : 'Maré (estimativa)';
 
-    const ruasHtml = b.ruas_afetadas.map(rua => `<li>${rua}</li>`).join("");
+    // Horário sempre visível
+    $('last-update').textContent = d?.gerado_em
+      ? `Joinville - SC • calculado em ${quando(d.gerado_em)}${estado.origem === 'salvo' ? ' (último estado salvo)' : ''}`
+      : 'Joinville - SC • sem dados do servidor';
 
-    card.innerHTML = `
-      <div class="bairro-title">
-        <span>📍 ${b.nome} (Cota: ${b.cota_m}m)</span>
-        <span style="font-size: 0.8rem; opacity: 0.9;">${statusDinamico}</span>
-      </div>
-      <ul class="ruas-list">
-        ${ruasHtml}
-      </ul>
-    `;
-
-    container.appendChild(card);
-  });
-}
-
-// Filtro de busca rápida de ruas e bairros
-const searchInput = document.getElementById("street-search");
-if (searchInput) {
-  searchInput.addEventListener("input", (e) => {
-    const query = e.target.value.toLowerCase().trim();
-
-    if (!query) {
-      renderBairros(allBairros);
-      return;
+    const avisos = [];
+    if (!d) avisos.push('Sem dados atuais: não foi possível falar com o servidor e não há estado salvo.');
+    else if (d.status === 'indisponivel') avisos.push('O servidor não tem dado válido agora. As faixas aparecem como indisponíveis.');
+    if (d && estado.origem === 'salvo') avisos.push('Sem conexão com o servidor: mostrando o último estado salvo.');
+    if (d && dadoAntigo()) {
+      avisos.push(`Dado antigo: calculado há ${Math.round(idadeMin())} min (validade ${d.validade_min} min). O risco pode ter mudado.`);
     }
+    const aviso = $('aviso-estado');
+    aviso.hidden = avisos.length === 0;
+    aviso.textContent = avisos.join(' ');
+  }
 
-    const filtered = allBairros.filter(b => {
-      const matchBairro = b.nome.toLowerCase().includes(query);
-      const matchRua = b.ruas_afetadas.some(r => r.toLowerCase().includes(query));
-      return matchBairro || matchRua;
-    });
+  // --- mapa ------------------------------------------------------------------------
+  const map = L.map('map', { preferCanvas: true }).setView([-26.3045, -48.8456], 12);
+  L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19, attribution: '© OpenStreetMap' }).addTo(map);
+  map.attributionControl.addAttribution(
+    'Manchas: PDDU Joinville (2011) · Ruas: © colaboradores do <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> (ODbL)'
+  );
+  map.createPane('manchas').style.zIndex = 400;
+  map.createPane('ruas').style.zIndex = 450;
+  const rendManchas = L.canvas({ pane: 'manchas' });
+  const rendRuas = L.canvas({ pane: 'ruas', tolerance: 8 });
 
-    renderBairros(filtered);
-  });
-}
+  const dados = {}; // id -> FeatureCollection
+  const manchas = {}; // id -> L.GeoJSON
+  let ruas = null;
+  let ruasLayer = null;
+  let ponto = null;
 
-// Lógica de Geolocalização por GPS
-const btnLocation = document.getElementById("btn-location");
-if (btnLocation) {
-  btnLocation.addEventListener("click", () => {
-    if (!navigator.geolocation) {
-      alert("Geolocalização não é suportada pelo seu navegador.");
-      return;
+  // 4 estados: ativa (cor da faixa) · inativa (neutra) · indisponível (tracejado) · dado antigo (esmaecido)
+  function estiloFaixa(id, cor, rua) {
+    const e = estadoFaixa(id);
+    const esmaecer = dadoAntigo() ? 0.55 : 1;
+    if (e === 'ativa') return { color: cor, weight: rua ? 4 : 1, opacity: esmaecer, fillColor: cor, fillOpacity: 0.35 * esmaecer };
+    if (e === 'inativa') return { color: COR_INATIVA, weight: rua ? 2 : 1, opacity: 0.6, fillColor: COR_INATIVA, fillOpacity: 0.08 };
+    return { color: COR_INDISPONIVEL, weight: rua ? 2 : 1, opacity: 0.7, dashArray: '4 6', fillColor: COR_INDISPONIVEL, fillOpacity: 0.05 };
+  }
+  function estiloRua(f) {
+    const fx = f.properties.faixas;
+    const ativa = FAIXAS.find((x) => fx.includes(x.id) && estadoFaixa(x.id) === 'ativa');
+    if (ativa) return estiloFaixa(ativa.id, ativa.cor, true);
+    const indisp = FAIXAS.find((x) => fx.includes(x.id) && estadoFaixa(x.id) === 'indisponivel');
+    if (indisp) return estiloFaixa(indisp.id, indisp.cor, true);
+    return estiloFaixa(fx[0], COR_INATIVA, true);
+  }
+
+  function atualizarMapa() {
+    for (const f of FAIXAS) manchas[f.id]?.setStyle(estiloFaixa(f.id, f.cor, false));
+    ruasLayer?.setStyle(estiloRua);
+  }
+
+  function desenharDados() {
+    for (const f of FAIXAS) {
+      manchas[f.id] = L.geoJSON(dados[f.id], {
+        filter: filtroDe(f.id),
+        renderer: rendManchas,
+        interactive: false,
+        style: estiloFaixa(f.id, f.cor, false),
+      }).addTo(map);
     }
-
-    btnLocation.textContent = "⌛ Obtendo localização...";
-
-    navigator.geolocation.getCurrentPosition(
-      (position) => {
-        const userLat = position.coords.latitude;
-        const userLon = position.coords.longitude;
-
-        let bairroMaisProximo = null;
-        let menorDistancia = Infinity;
-
-        // Itera sobre as coordenadas dos bairros conhecidos
-        for (const [bairro, coords] of Object.entries(COORDENADAS_BAIRROS)) {
-          const dist = calcularDistanciaKm(userLat, userLon, coords.lat, coords.lon);
-          if (dist < menorDistancia) {
-            menorDistancia = dist;
-            bairroMaisProximo = bairro;
-          }
-        }
-
-        if (bairroMaisProximo) {
-          btnLocation.textContent = `📍 Próximo a: ${bairroMaisProximo} (${menorDistancia.toFixed(1)} km)`;
-          
-          // Aplica o filtro automaticamente para o bairro identificado
-          if (searchInput) {
-            searchInput.value = bairroMaisProximo;
-            searchInput.dispatchEvent(new Event("input"));
-          }
-        } else {
-          btnLocation.textContent = "📍 Usar minha localização";
-          alert("Não foi possível identificar um bairro mapeado próximo.");
-        }
+    ruasLayer = L.geoJSON(ruas, {
+      renderer: rendRuas,
+      style: estiloRua,
+      onEachFeature: (feat, camada) => {
+        const p = feat.properties;
+        const div = document.createElement('div');
+        const nome = document.createElement('strong');
+        nome.textContent = p.nome || '(sem nome no OSM)';
+        const det = document.createElement('div');
+        det.textContent = FAIXAS.filter((x) => p.faixas.includes(x.id))
+          .map((x) => `${x.rotulo}: ${estadoFaixa(x.id)}`)
+          .join(' · ');
+        div.append(nome, det);
+        camada.bindPopup(div);
       },
-      (error) => {
-        btnLocation.textContent = "📍 Usar minha localização";
-        alert("Não foi possível obter sua localização. Verifique as permissões de GPS no navegador.");
-      }
-    );
-  });
-}
+    }).addTo(map);
+    map.fitBounds(manchas.mare_2_5.getBounds(), { padding: [20, 20] });
+  }
 
-initApp();
+  function renderLegenda() {
+    $('legenda-faixas').replaceChildren(
+      ...FAIXAS.map((f) => {
+        const li = document.createElement('li');
+        const cor = document.createElement('span');
+        cor.className = 'cor';
+        cor.style.background = f.cor;
+        li.append(cor, `${f.rotulo} — ${estadoFaixa(f.id)}`);
+        return li;
+      })
+    );
+  }
+
+  // --- localização (ponto-em-polígono sobre as manchas) -----------------------------
+  function avaliarPonto(latlng, precisao) {
+    const dentro = FAIXAS.filter((f) => PIP.pontoNaColecao(dados[f.id], latlng.lng, latlng.lat, filtroDe(f.id)));
+    const caixa = $('resultado');
+    caixa.replaceChildren();
+    const p = document.createElement('p');
+    const lista = document.createElement('ul');
+    if (dentro.length) {
+      const ativas = dentro.filter((f) => estadoFaixa(f.id) === 'ativa');
+      p.textContent = ativas.length
+        ? 'Você está numa mancha com faixa ativa agora: há risco de alagar aqui.'
+        : 'Você está dentro de uma mancha de risco, mas nenhuma faixa dela está ativa agora (ou o estado está indisponível). O risco de alagar muda com maré e chuva.';
+      for (const f of dentro) {
+        const li = document.createElement('li');
+        li.textContent = `${f.rotulo}: ${estadoFaixa(f.id)}`;
+        lista.append(li);
+      }
+    } else {
+      p.textContent = 'Você está fora das manchas mapeadas. Isso não significa que não haja risco de alagar.';
+    }
+    const nota = document.createElement('small');
+    nota.textContent = `Precisão do GPS: ±${Math.round(precisao)} m. Perto da borda de uma mancha o resultado é incerto.`;
+    caixa.append(p, lista, nota);
+    caixa.hidden = false;
+  }
+
+  function usarGps() {
+    const btn = $('btn-location');
+    const caixa = $('resultado');
+    const aviso = (txt) => {
+      caixa.replaceChildren(txt);
+      caixa.hidden = false;
+    };
+    if (!navigator.geolocation) return aviso('Este navegador não oferece geolocalização.');
+    if (!ruas) return aviso('O mapa ainda não carregou os dados de risco. Tente de novo em instantes.');
+    btn.disabled = true;
+    btn.textContent = '⌛ Obtendo localização...';
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        btn.disabled = false;
+        btn.textContent = '📍 Usar minha localização';
+        const ll = L.latLng(pos.coords.latitude, pos.coords.longitude);
+        if (ponto) map.removeLayer(ponto);
+        ponto = L.marker(ll).addTo(map);
+        map.setView(ll, 16);
+        avaliarPonto(ll, pos.coords.accuracy);
+      },
+      () => {
+        btn.disabled = false;
+        btn.textContent = '📍 Usar minha localização';
+        aviso('Não foi possível obter sua localização. Verifique a permissão de GPS no navegador.');
+      },
+      { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 }
+    );
+  }
+  $('btn-location').addEventListener('click', usarGps);
+
+  // --- início --------------------------------------------------------------------------
+  function renderTudo() {
+    renderPainel();
+    renderLegenda();
+    atualizarMapa();
+  }
+
+  async function carregarGeo(url) {
+    const res = await fetch(url);
+    if (!res.ok) throw new Error(`${url}: HTTP ${res.status}`);
+    return res.json();
+  }
+
+  (async () => {
+    // Cache primeiro: mostra o último estado salvo já, depois atualiza pela rede.
+    const salvo = lerSalvo();
+    if (salvo) estado = { dados: salvo, origem: 'salvo' };
+    renderPainel();
+    renderLegenda();
+
+    try {
+      const geo = await Promise.all([...FAIXAS.map((f) => carregarGeo(f.arq)), carregarGeo(RUAS_ARQ)]);
+      FAIXAS.forEach((f, i) => (dados[f.id] = geo[i]));
+      ruas = geo[FAIXAS.length];
+      desenharDados();
+    } catch (e) {
+      console.warn('Falha ao carregar os dados do mapa:', e);
+      $('aviso-mapa').hidden = false;
+    }
+
+    estado = await buscarEstado();
+    renderTudo();
+    setInterval(async () => {
+      estado = await buscarEstado();
+      renderTudo();
+    }, 5 * 60 * 1000);
+  })();
+})();

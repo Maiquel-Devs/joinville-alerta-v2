@@ -121,6 +121,7 @@ As Etapas 0 e 1 foram concluídas, mas **os valores decididos ainda não foram r
 | Cenário de Vila Nova (o que "Futuro" representa) | **Cenário `Atual`, tempo de retorno de 25 anos** (filtro `status_1=Atual`, `tempretor=25 anos`). "Futuro" não é "com obras": a mancha Futura é maior que a Atual (2,14 × 1,50 km² em 25 anos), parece cenário de maior ocupação; fica fora. | 08/10/2026 |
 | Cenário de Itaum | **Mantida como `pluvial_itaum`.** Nota: a mancha coincide espacialmente com a de maré de 2,5 m (100% da área de Itaum, 3,97 km², está dentro dela; 35% dentro da de 1,6 m), então pode representar maré, não chuva. Significado a confirmar na fonte; se for maré, passar ao gatilho de maré. Os trechos nessa área saem com `mare_2_5` + `pluvial_itaum`. | 08/10/2026 |
 | Limiar pluvial | _a preencher_ | |
+| Trecho em mais de uma faixa (front) | Pintar pela **pior faixa ativa** no momento, como o nível global. Rótulos dos níveis: provisórios, vindos do campo `nivel` da API. | 12/10/2026 |
 | Nomes dos níveis | _a preencher_ | |
 
 Decididas nesta fase:

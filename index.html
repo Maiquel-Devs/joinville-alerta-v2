@@ -3,8 +3,8 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>joinville-alerta-v2 | Emergência de Alagamentos</title>
-  
+  <title>Joinville Alerta | Risco de alagar por rua</title>
+
   <!-- Suporte e Configurações de PWA -->
   <link rel="manifest" href="manifest.json" />
   <meta name="theme-color" content="#0f172a" />
@@ -12,63 +12,69 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
   <link rel="apple-touch-icon" href="https://cdn-icons-png.flaticon.com/512/5664/5664993.png" />
 
+  <link rel="stylesheet" href="vendor/leaflet/leaflet.css" />
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
 
   <header>
-    <h1>🌧️ joinville-alerta-v2</h1>
-    <p id="last-update">Atualizando telemetria...</p>
+    <h1>🌧️ Joinville Alerta</h1>
+    <p id="last-update">Carregando...</p>
   </header>
 
   <main>
-    <!-- Card do Agente de IA (Mistral) -->
-    <section class="ai-card">
+    <p id="aviso-estado" class="aviso" role="status" hidden></p>
+
+    <!-- Nível e texto decididos pelo back-end -->
+    <section class="ai-card" id="ai-card">
       <div class="ai-header">
         <span class="badge-risk" id="ai-risk-badge">...</span>
-        <small style="color: #94a3b8; font-size: 0.7rem;">🤖 Agente Mistral AI</small>
+        <small class="muted">Texto gerado por IA a partir do nível calculado</small>
       </div>
-      <h2 id="ai-title">Carregando diagnóstico...</h2>
-      <p id="ai-message">Consultando dados de chuva e maré no Rio Cachoeira...</p>
+      <h2 id="ai-title">Carregando...</h2>
+      <p id="ai-message"></p>
     </section>
 
-    <!-- Métricas Hidrometeorológicas -->
     <section class="metrics-grid">
       <div class="metric-card">
-        <span>Chuva Acumulada (24h)</span>
-        <strong id="m-rain">-- mm</strong>
+        <span>Chuva acumulada (24h)</span>
+        <strong id="m-rain">—</strong>
       </div>
       <div class="metric-card">
-        <span>Maré Babitonga</span>
-        <strong id="m-tide">-- m</strong>
+        <span id="m-tide-label">Maré (estimativa)</span>
+        <strong id="m-tide">—</strong>
       </div>
     </section>
 
-    <!-- Geolocalização & Barra de Pesquisa de Ruas -->
     <section class="search-box">
-      <button id="btn-location" class="location-btn" type="button">
-        📍 Usar minha localização
-      </button>
-      <input 
-        type="text" 
-        id="street-search" 
-        class="search-input" 
-        placeholder="🔍 Digite sua rua ou bairro (ex: Procópio Gomes, Bucarein)..." 
-      />
+      <button id="btn-location" class="location-btn" type="button">📍 Usar minha localização</button>
+      <div id="resultado" class="resultado" role="status" hidden></div>
     </section>
 
-    <!-- Lista Dinâmica de Bairros e Ruas Críticas -->
-    <section id="bairros-container">
-      <!-- Inserido dinamicamente pelo JS -->
+    <p id="aviso-mapa" class="aviso" hidden>Não foi possível carregar o mapa de risco. Abra o app com conexão ao menos uma vez.</p>
+    <div id="map" aria-label="Mapa de risco de alagar em Joinville"></div>
+
+    <section class="legenda">
+      <h3>Legenda</h3>
+      <ul id="legenda-faixas"></ul>
+      <ul class="legenda-fixa">
+        <li><span class="cor" style="background:#94a3b8"></span>Faixa inativa agora (cinza)</li>
+        <li><span class="cor tracejado"></span>Faixa indisponível: sem dado válido (tracejado)</li>
+        <li><span class="cor" style="background:#e03131;opacity:.55"></span>Cor esmaecida: dado antigo</li>
+      </ul>
     </section>
   </main>
 
   <footer>
-    <p>joinville-alerta-v2 • Informação comunitária direta ao cidadão</p>
+    <p><strong>Fora das manchas também pode alagar.</strong> O mapa mostra só os cenários modelados pelo PDDU; falhas de drenagem e chuva local continuam possíveis.</p>
+    <p>Mostra <strong>risco de alagar</strong> estimado a partir de maré e chuva; não confirma alagamento na rua.</p>
+    <p>Em emergência, ligue <strong>199 (Defesa Civil)</strong>. Este app não substitui a Defesa Civil.</p>
+    <p class="muted">Manchas: PDDU Joinville (2011). Ruas: © colaboradores do <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> (ODbL). Chuva: Open-Meteo.</p>
   </footer>
 
-  <!-- Script Principal do App -->
-  <script type="module" src="app.js"></script>
+  <script src="vendor/leaflet/leaflet.js"></script>
+  <script src="pip.js"></script>
+  <script src="app.js"></script>
 
   <!-- Registro do Service Worker PWA -->
   <script>

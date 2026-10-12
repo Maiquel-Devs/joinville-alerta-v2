@@ -1,14 +1,14 @@
-/* style.css - Minimalista, ultra-leve para emergência em Joinville */
+/* style.css - Minimalista, leve, pensado para celular em emergência */
 :root {
   --bg-main: #0f172a;
   --card-bg: #1e293b;
   --text-primary: #f8fafc;
   --text-muted: #94a3b8;
   --border-color: #334155;
-  --red-critical: #ef4444;
-  --orange-high: #f97316;
-  --yellow-warn: #eab308;
-  --green-ok: #10b981;
+  --nivel-atencao: #eab308;
+  --nivel-alto: #ef4444;
+  --nivel-normal: #10b981;
+  --nivel-indisponivel: #64748b;
 }
 
 * {
@@ -22,10 +22,14 @@ body {
   background-color: var(--bg-main);
   color: var(--text-primary);
   padding: 12px;
-  max-width: 600px; /* Layout focado em mobile */
+  max-width: 600px;
   margin: 0 auto;
   line-height: 1.4;
 }
+
+[hidden] { display: none !important; }
+a { color: #38bdf8; }
+.muted { color: var(--text-muted); font-size: 0.7rem; }
 
 header {
   text-align: center;
@@ -33,72 +37,60 @@ header {
   border-bottom: 1px solid var(--border-color);
   margin-bottom: 12px;
 }
+header h1 { font-size: 1.3rem; color: #38bdf8; }
+header p { font-size: 0.8rem; color: var(--text-muted); }
 
-header h1 {
-  font-size: 1.3rem;
-  color: #38bdf8;
+/* Avisos de estado (indisponível, dado antigo, sem conexão) */
+.aviso {
+  background: #422006;
+  border: 1px solid #a16207;
+  color: #fde68a;
+  border-radius: 6px;
+  padding: 10px;
+  margin-bottom: 12px;
+  font-size: 0.85rem;
 }
 
-header p {
-  font-size: 0.8rem;
-  color: var(--text-muted);
-}
-
-/* Card do Agente de IA */
+/* Cartão do nível global: a cor vem do nível que o back-end devolveu */
 .ai-card {
-  background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
-  border: 2px solid var(--red-critical);
+  background: var(--card-bg);
+  border: 2px solid var(--nivel-indisponivel);
   border-radius: 8px;
   padding: 14px;
   margin-bottom: 12px;
-  box-shadow: 0 4px 12px rgba(239, 68, 68, 0.2);
 }
+.ai-card.nivel-normal { border-color: var(--nivel-normal); }
+.ai-card.nivel-atencao { border-color: var(--nivel-atencao); }
+.ai-card.nivel-alto { border-color: var(--nivel-alto); }
 
 .ai-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
+  gap: 8px;
   margin-bottom: 8px;
 }
-
-/* Cores dinâmicas para a Badge de Risco Geral */
-.badge-risk.NORMAL,
-.badge-risk.NORMAL_NIVEL {
-  background-color: var(--green-ok) !important; /* Verde - Segurança */
-  color: #ffffff !important;
+.badge-risk {
+  padding: 3px 10px;
+  border-radius: 999px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: #fff;
+  background: var(--nivel-indisponivel);
 }
+.badge-risk.nivel-normal { background: var(--nivel-normal); }
+.badge-risk.nivel-atencao { background: #ca8a04; }
+.badge-risk.nivel-alto { background: var(--nivel-alto); }
 
-.badge-risk.ATENCAO, 
-.badge-risk.ALERTA {
-  background-color: #f59e0b !important; /* Laranja / Amarelo - Atenção */
-  color: #ffffff !important;
-}
+.ai-card h2 { font-size: 1.05rem; margin-bottom: 6px; }
+.ai-card p { font-size: 0.88rem; color: #e2e8f0; }
 
-.badge-risk.PERIGO, 
-.badge-risk.EMERGENCIA,
-.badge-risk.CRITICO {
-  background-color: var(--red-critical) !important; /* Vermelho - Perigo */
-  color: #ffffff !important;
-}
-
-.ai-card h2 {
-  font-size: 1.05rem;
-  margin-bottom: 6px;
-}
-
-.ai-card p {
-  font-size: 0.88rem;
-  color: #e2e8f0;
-}
-
-/* Grid de Métricas de Telemetria */
 .metrics-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 8px;
   margin-bottom: 12px;
 }
-
 .metric-card {
   background-color: var(--card-bg);
   border: 1px solid var(--border-color);
@@ -106,118 +98,65 @@ header p {
   padding: 10px;
   text-align: center;
 }
+.metric-card span { font-size: 0.7rem; color: var(--text-muted); display: block; text-transform: uppercase; }
+.metric-card strong { font-size: 1.2rem; color: #38bdf8; }
 
-.metric-card span {
-  font-size: 0.7rem;
-  color: var(--text-muted);
-  display: block;
-  text-transform: uppercase;
-}
-
-.metric-card strong {
-  font-size: 1.2rem;
+/* Localização */
+.search-box { margin-bottom: 12px; }
+.location-btn {
+  width: 100%;
+  padding: 12px;
+  background-color: var(--card-bg);
   color: #38bdf8;
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
 }
+.location-btn:hover:not(:disabled) { background-color: #334155; border-color: #38bdf8; }
+.location-btn:disabled { opacity: 0.7; cursor: wait; }
+.resultado {
+  margin-top: 8px;
+  background: var(--card-bg);
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  padding: 10px;
+  font-size: 0.88rem;
+}
+.resultado ul { margin: 6px 0 6px 18px; }
+.resultado small { display: block; color: var(--text-muted); font-size: 0.75rem; }
 
-/* Busca Rápida e Botão de Geolocalização */
-.search-box {
+/* Mapa */
+#map {
+  height: 55vh;
+  min-height: 320px;
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
   margin-bottom: 12px;
 }
 
-.location-btn {
-  width: 100%;
-  padding: 10px 12px;
-  margin-bottom: 8px;
-  background-color: var(--card-bg);
-  color: #38bdf8;
+/* Legenda */
+.legenda {
+  background: var(--card-bg);
   border: 1px solid var(--border-color);
   border-radius: 6px;
-  font-size: 0.88rem;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 6px;
+  padding: 10px;
+  font-size: 0.82rem;
 }
-
-.location-btn:hover {
-  background-color: #334155;
-  color: #7dd3fc;
-  border-color: #38bdf8;
-}
-
-.search-input {
-  width: 100%;
-  padding: 12px;
-  border-radius: 6px;
-  border: 1px solid var(--border-color);
-  background-color: var(--card-bg);
-  color: var(--text-primary);
-  font-size: 0.95rem;
-}
-
-/* Cards de Bairros com Bordas Laterais Dinâmicas */
-.bairro-card {
-  background-color: var(--card-bg);
-  border: 1px solid var(--border-color);
-  border-radius: 6px;
-  padding: 12px;
-  margin-bottom: 8px;
-  border-left: 5px solid var(--green-ok); /* Padrão: Verde */
-  transition: border-color 0.3s ease;
-}
-
-/* Suporte para minúsculas e maiúsculas */
-.bairro-card.normal,
-.bairro-card.NORMAL { 
-  border-left: 5px solid var(--green-ok) !important; 
-}
-
-.bairro-card.atencao,
-.bairro-card.ATENCAO { 
-  border-left: 5px solid var(--yellow-warn) !important; 
-}
-
-.bairro-card.alto,
-.bairro-card.ALTO { 
-  border-left: 5px solid var(--orange-high) !important; 
-}
-
-.bairro-card.critico,
-.bairro-card.CRITICO { 
-  border-left: 5px solid var(--red-critical) !important; 
-}
-
-.bairro-title {
-  display: flex;
-  justify-content: space-between;
-  font-weight: bold;
-  font-size: 0.95rem;
-  margin-bottom: 4px;
-}
-
-.ruas-list {
-  font-size: 0.8rem;
-  color: var(--text-muted);
-  margin-top: 6px;
-  padding-left: 16px;
-}
+.legenda h3 { font-size: 0.9rem; margin-bottom: 6px; }
+.legenda ul { list-style: none; }
+.legenda li { display: flex; align-items: center; gap: 8px; margin: 3px 0; }
+.legenda-fixa { margin-top: 6px; padding-top: 6px; border-top: 1px solid var(--border-color); }
+.cor { display: inline-block; width: 22px; height: 6px; border-radius: 3px; flex: none; }
+.cor.tracejado { background: repeating-linear-gradient(90deg, #64748b 0 4px, transparent 4px 8px); }
 
 footer {
-  text-align: center;
-  font-size: 0.75rem;
+  font-size: 0.78rem;
   color: var(--text-muted);
   margin-top: 16px;
   padding-top: 10px;
   border-top: 1px solid var(--border-color);
 }
-/* Dado indisponível: neutro, nunca verde/"normal" */
-.badge-risk.INDISPONIVEL {
-  background-color: #64748b !important;
-  color: #ffffff !important;
-}
-.bairro-card.INDISPONIVEL {
-  border-left: 5px solid #64748b !important;
-}
+footer p { margin-bottom: 6px; }
+footer strong { color: var(--text-primary); }
