@@ -1,61 +1,68 @@
-const CACHE_NAME = 'joinville-alerta-v2-cache';
+// Service Worker: cache primeiro para tudo que é do próprio app, atualizando em segundo plano.
+// Suba a versão sempre que mudar qualquer arquivo da lista (inclusive data/*.geojson).
+const VERSAO = 'v3';
+const CACHE_NAME = `joinville-alerta-v2-${VERSAO}`;
 const ASSETS_TO_CACHE = [
   './',
   './index.html',
   './style.css',
   './app.js',
-  './manifest.json'
+  './pip.js',
+  './manifest.json',
+  './vendor/leaflet/leaflet.js',
+  './vendor/leaflet/leaflet.css',
+  './vendor/leaflet/images/layers.png',
+  './vendor/leaflet/images/layers-2x.png',
+  './vendor/leaflet/images/marker-icon.png',
+  './vendor/leaflet/images/marker-icon-2x.png',
+  './vendor/leaflet/images/marker-shadow.png',
+  './data/geojson/mare_cachoeira_1_6m.geojson',
+  './data/geojson/mare_cachoeira_2_5m.geojson',
+  './data/geojson/inundacao_vila_nova.geojson',
+  './data/geojson/inundacao_itaum.geojson',
+  './data/ruas_risco.geojson'
 ];
 
-// 1. Instalação: Salva todos os arquivos estáticos no cache do navegador
 self.addEventListener('install', (event) => {
-  event.waitUntil(
-    caches.open(CACHE_NAME).then((cache) => {
-      console.log('[Service Worker] Caching app assets...');
-      return cache.addAll(ASSETS_TO_CACHE);
-    })
-  );
+  event.waitUntil(caches.open(CACHE_NAME).then((cache) => cache.addAll(ASSETS_TO_CACHE)));
   self.skipWaiting();
 });
 
-// 2. Ativação: Limpa caches antigos se houver atualização
 self.addEventListener('activate', (event) => {
   event.waitUntil(
-    caches.keys().then((keys) => {
-      return Promise.all(
-        keys.map((key) => {
-          if (key !== CACHE_NAME) {
-            console.log('[Service Worker] Removing old cache:', key);
-            return caches.delete(key);
-          }
-        })
-      );
-    })
+    caches.keys().then((keys) =>
+      Promise.all(keys.filter((k) => k !== CACHE_NAME).map((k) => caches.delete(k)))
+    )
   );
   self.clients.claim();
 });
 
-// 3. Interceptação de Rede: Estratégia Network First com Fallback para Cache
+// Só intercepta GET do mesmo domínio. A API (Render) e os tiles do mapa passam direto:
+// o app guarda o último estado da API por conta própria e os tiles ficam fora do cache (3.4).
 self.addEventListener('fetch', (event) => {
-  // Ignora requisições que não sejam GET ou que venham de extensões do navegador (ex: chrome-extension://)
-  if (event.request.method !== 'GET' || !event.request.url.startsWith('http')) return;
+  const req = event.request;
+  if (req.method !== 'GET') return;
+  const url = new URL(req.url);
+  if (url.origin !== self.location.origin) return;
 
   event.respondWith(
-    fetch(event.request)
-      .then((networkResponse) => {
-        // Se a rede responder com sucesso, guarda uma cópia atualizada
-        if (networkResponse && networkResponse.status === 200) {
-          const responseToCache = networkResponse.clone();
-          caches.open(CACHE_NAME).then((cache) => {
-            cache.put(event.request, responseToCache);
-          });
-        }
-        return networkResponse;
-      })
-      .catch(() => {
-        // Se a rede falhar (ex: sem internet na tempestade), serve do cache!
-        console.log('[Service Worker] Network failed. Serving from cache:', event.request.url);
-        return caches.match(event.request);
-      })
+    caches.open(CACHE_NAME).then(async (cache) => {
+      const emCache = await cache.match(req, { ignoreSearch: true });
+      const rede = fetch(req)
+        .then((res) => {
+          if (res && res.status === 200) cache.put(req, res.clone());
+          return res;
+        })
+        .catch(() => null);
+      if (emCache) {
+        event.waitUntil(rede); // atualiza em segundo plano
+        return emCache;
+      }
+      const res = await rede;
+      if (res) return res;
+      // Sem rede e sem cache: navegação cai na página principal
+      if (req.mode === 'navigate') return (await cache.match('./index.html')) || Response.error();
+      return Response.error();
+    })
   );
 });
