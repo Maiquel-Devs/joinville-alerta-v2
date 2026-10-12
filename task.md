@@ -66,26 +66,28 @@ Script rodado no seu computador, nunca em tempo de execução.
 - [ ] 2.6 Versionar o script das ruas e o arquivo gerado no repo (junto com o da tarefa 2.1b). **Falta o commit** de `scripts/` e `data/ruas_risco.geojson`; a 2.1b segue aberta, pois o script das ruas consome `data/geojson/` e não o regenera dos brutos.
 - [x] 2.7 Conferir a olho no mapa uma amostra (Rua Minas Gerais, Rua Urussanga, Rua Inácio Bastos). **Conferido a olho em 12/10/2026 (3.0).** Resultado numérico: Urussanga e Inácio Bastos têm trechos; Minas Gerais não tem nenhum (ver "Decisões tomadas" no `CLAUDE.md`).
 
+- [x] 2.8 ⚖️ **Rótulo de bairro/área por trecho** (para a lista viva da 3.1). **Decidido em 12/10/2026: opção (B), agrupar por faixa/área** (Maré de 1,6 m, Maré de 2,5 m, Chuva — Vila Nova, Chuva — Itaum), sem dataset de bairros. Nenhum campo novo em `data/ruas_risco.geojson`. Qualquer campo novo em `data/ruas_risco.geojson` precisa ser usado pelo app e caber no orçamento.
+
 **Pronto quando:** cada trecho tem faixa; a amostra foi conferida; o script reproduz o arquivo a partir dos dados brutos.
 **Riscos:** nomes faltando no OSM; licença ODbL exige atribuição visível no mapa e no README; manchas de 2011 não refletem obras recentes.
 
 ---
 
-## Etapa 3 — Front-end: mapa, GPS e estados (Etapa 1 pronta; as ruas da Etapa 2 podem vir depois)
+## Etapa 3 — Front-end: lista viva, busca e GPS (Etapa 1 pronta)
 
-O PWA desenha o que o back-end decidiu, sem regra de risco própria.
+**Reestruturada em 12/10/2026 (decisão de UX; ver "Regra de UX" no `CLAUDE.md`):** a tela principal é uma lista viva de bairros/ruas ordenada "pior primeiro", com busca e GPS. O mapa em tela cheia sai da tela principal. O PWA só ordena e mostra o que o back-end decidiu; nenhuma regra de risco própria.
 
-- [x] 3.0 🧪 **Teste rápido das manchas, sem ruas:** carregar as 4 camadas de `data/geojson/` no Leaflet (uma por faixa, ligadas por interruptor), conferir a sobreposição e medir peso e fluidez no celular. Já inclui o ponto-em-polígono do GPS, que agora funciona porque as geometrias são válidas. O resultado antecipa as decisões 3.2 e 3.6.
-  **Página criada em 08/10/2026:** `teste/camadas.html` (Leaflet 1.9.4 em `vendor/leaflet/`; manchas, ruas, Vila Nova Atual/25 anos, ruas de amostra, ponto-em-polígono por clique ou GPS, peso e tempo de carga). Rodar: `python -m http.server 8000` na raiz e abrir `http://localhost:8000/teste/camadas.html`. Ponto-em-polígono conferido contra o shapely (12.000 pontos, 0 divergências). **Concluída e validada em 12/10/2026** (informado pelo autor): `teste/camadas.html` e `index.html` servidos via `http.server`; API respondeu, o fallback seguro funcionou, mapa desenhou ruas e manchas dentro do orçamento (~382 KB). Ainda não medido em celular real (fica para 3.6).
+Já feito e reaproveitado: leitura de `/api/v1/status-geral` com último estado salvo e aviso de dado antigo, `pip.js`, GPS, textos fixos e Service Worker (3.3). A primeira versão com mapa em tela cheia foi validada em 12/10/2026 e vira base do painel secundário, se ele ficar.
 
-- [x] 3.1 Quatro estados visíveis: faixa ativa (cor), inativa (neutra), indisponível, dado antigo (horário + aviso após a validade). **Escrito em 12/10/2026 (`app.js`, `style.css`), validado no navegador pelo autor em 12/10/2026 (4 estados e GPS).** Trecho em mais de uma faixa é pintado pela pior faixa ativa; sem faixa ativa e com alguma indisponível, tracejado.
-- [x] 3.2 ⚖️ (ponto-em-polígono implementado em `app.js` com `pip.js` movido para a raiz; validado no navegador em 12/10/2026) Localização do usuário: ponto-em-polígono com manchas simplificadas (~1 MB comprimido); senão, distância ao trecho de risco mais próximo. App informa em qual faixa o usuário está; bairro vira só rótulo.
-- [ ] 3.3 Service Worker: cache primeiro, atualização da API em segundo plano; Leaflet e os arquivos de `data/geojson/` hospedados e listados no cache do repo (nome com `.geojson`; versionar o cache quando os arquivos mudarem).
-- [ ] 3.4 ⚖️ Mapa base offline. Recomendação: tiles só online; offline, só as ruas em risco. (Não apontar direto para os tiles do OSM sem avaliar a política de uso.)
-- [x] 3.5 (textos fixos já no `index.html`; validado em 12/10/2026) Textos: sempre "risco de alagar". Legenda, atribuição OSM e PDDU, aviso "fora da mancha também pode alagar", Defesa Civil (199), aviso de que o app não substitui a Defesa Civil.
-- [ ] 3.6 🧪 Medir desempenho em celular intermediário (o Handoff cita 60 FPS; medir de verdade). Se pesar, simplificar a geometria antes de trocar de biblioteca.
+- [x] 3.0 🧪 Teste das manchas no Leaflet, com ponto-em-polígono (`teste/camadas.html`). Concluída e validada em 12/10/2026 (~382 KB). Ponto-em-polígono conferido contra o shapely (12.000 pontos, 0 divergências). Serviu de base para 2.4 e 2.7.
+- [ ] 3.1 **Lista Viva de Bairros e Ruas, "Pior Primeiro".** Cartões ordenados por estado: (1) faixa ativa, pior nível primeiro, em destaque (vermelho/laranja) com as ruas afetadas; (2) só indisponível, cartão neutro com aviso; (3) demais em ordem alfabética, "Nenhuma faixa ativa agora". Mantém os 4 estados (ativa, inativa, indisponível, dado antigo com horário e aviso). Reordena quando chega um novo estado da API. Depende da decisão da 2.8 (rótulo de bairro/área). Nunca "sem risco" nem "normal" sem dado válido.
+- [ ] 3.2 ⚖️ **Busca e cartão do GPS.** Campo de busca por rua/bairro (sem acento, resultado a cada tecla). Botão "Usar minha localização": ponto-em-polígono (`pip.js`) contra as manchas; cartão em texto dizendo se está dentro de alguma mancha, qual faixa está ativa agora e a precisão do GPS. Sempre com "Fora das manchas também pode alagar" e "Este app não substitui a Defesa Civil (199)". A lógica do GPS já existe no `app.js` atual; faltam a busca e o cartão novo.
+- [ ] 3.3 Service Worker: cache primeiro, atualização em segundo plano; `pip.js` e `data/**/*.geojson` no cache, versionado por `VERSAO`. Escrito em 12/10/2026; **falta testar em modo avião** e ajustar a lista de arquivos conforme a 3.4 (Leaflet sob demanda ou removido).
+- [ ] 3.4 ⚖️ **Mapa removido da interface principal e do cache inicial (decidido em 12/10/2026: apagar de vez).** Implementado: `index.html` sem Leaflet, `sw.js` v4 sem `vendor/leaflet/`. `teste/camadas.html` e `vendor/leaflet/` ficam no repo só para auditoria (decidir na Etapa 4 se `vendor/` sai). Antes: **Remover/recolher o mapa Leaflet principal.** Recomendado: painel recolhido "Ver mapa detalhado", com Leaflet e GeoJSON de ruas carregados só ao abrir (o peso inicial cai para a lista, o `pip.js` e as manchas). Alternativa mais enxuta e mais fiel a "apagar antes de adicionar": apagar o mapa e o Leaflet do app. Substitui a antiga decisão de mapa base offline: tiles só online no painel secundário, ou nenhum.
+- [ ] 3.5 **Revisar os textos fixos** para a nova tela: "risco de alagar", "Fora das manchas também pode alagar", Defesa Civil (199), "o app não substitui a Defesa Civil", atribuição OSM (ODbL) e PDDU, legenda das cores da lista e "Nenhuma faixa ativa agora" no lugar de "sem risco".
+- [ ] 3.6 🧪 **Desempenho no celular real:** resposta em menos de 0,5 s com cache, leitura sem zoom, lista fluida. Medir de verdade. Se pesar, reduzir antes de trocar de biblioteca.
 
-**Pronto quando:** o app abre em modo avião com o último estado e o horário; o GPS informa a faixa; nenhum texto diz "alagado"; renderização fluida em celular intermediário.
+**Pronto quando:** a lista aparece em modo avião com o último estado e o horário; quem tem faixa ativa fica no topo; busca e GPS respondem em texto claro; nenhum texto diz "alagado" nem "sem risco"; leitura fluida em celular intermediário.
 
 ---
 

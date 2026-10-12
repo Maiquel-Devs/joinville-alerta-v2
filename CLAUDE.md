@@ -16,6 +16,16 @@ Mapa de **risco de alagamento por rua** em Joinville/SC, gratuito e funcional of
 - Nunca "sem risco" nem "cidade segura" para áreas fora das manchas: fora da mancha **não** significa seguro.
 - Dado indisponível **nunca** aparece como "normal".
 
+## Regra de UX (inviolável, decidida em 12/10/2026)
+
+**Interface orientada a lista viva ordenada por prioridade (Pior Primeiro) + busca rápida. O mapa interativo em tela cheia está removido da tela principal; foi apagado da interface e do cache inicial.** Motivo: sob tempestade, polígonos e zoom pesam na leitura; a tela precisa ser lida em menos de 2 s.
+
+Ordenação dinâmica da lista (o front só ordena, não decide risco):
+1. No topo, em cartão de destaque (vermelho/laranja) com as ruas afetadas, ficam os bairros/áreas com ao menos um trecho em faixa `ativa` segundo `/api/v1/status-geral`. Entre eles, vem primeiro quem tem a faixa de pior nível, na mesma ordem do motor do back-end.
+2. Depois, os que só têm faixa `indisponivel` (cartão neutro com aviso; nunca "normal").
+3. Por fim, os demais em ordem alfabética, com estado neutro: **"Nenhuma faixa ativa agora"**. Não usar "sem risco": fora de faixa ativa ou de mancha continua podendo alagar.
+4. Busca por rua/bairro e botão de GPS (ponto-em-polígono com `pip.js`) respondem em texto claro: dentro de qual mancha, qual faixa está ativa agora, mais "Fora das manchas também pode alagar" e "Este app não substitui a Defesa Civil (199)".
+
 ## Princípios (empate → vence a opção que apaga mais código)
 
 1. **Custo zero.** GitHub Pages (PWA e dados estáticos), Render gratuito (API), camada gratuita do Mistral. Nada pago.
@@ -42,7 +52,7 @@ Mapa de **risco de alagamento por rua** em Joinville/SC, gratuito e funcional of
 - **Back-end (FastAPI no Render):** scheduler a cada 15 min coleta chuva (24 h e 48 h) e vento na Open-Meteo, obtém a maré pela fonte definida na Etapa 0, calcula a maré efetiva e avalia as **faixas de gatilho**: `mare_1_6`, `mare_2_5` e as pluviais (Vila Nova, Itaum). Cada faixa fica `ativa`, `inativa` ou `indisponivel`. O nível global é a **pior faixa ativa**. Cache em RAM guarda o resultado com `gerado_em`.
 - **IA (Mistral):** recebe faixas ativas e nível já calculado. Só é chamada quando o conjunto de faixas ativas muda; senão reaproveita o texto anterior. Se falhar, texto determinístico de reserva. Para o nível normal, texto neutro (nenhuma faixa ativa agora; áreas fora das manchas também podem alagar).
 - **Pipeline offline (computador do autor):** shapefiles do PDDU (SIRGAS 2000, UTM 22S → WGS84) × ruas do OpenStreetMap (Overpass) → GeoJSON estático em que cada trecho carrega sua faixa de gatilho. Script e arquivo gerado versionados no repo.
-- **Front (PWA no GitHub Pages):** desenha o risco decidido pelo back-end sobre o GeoJSON estático. Service Worker responde cache primeiro e atualiza em segundo plano. Leaflet hospedado no próprio repo. GPS testado contra as manchas; bairro é só rótulo.
+- **Front (PWA no GitHub Pages):** lista viva ordenada "pior primeiro" (ver Regra de UX), montada com o estado das faixas decidido pelo back-end e o GeoJSON estático de ruas. Service Worker responde cache primeiro e atualiza em segundo plano. GPS testado contra as manchas. Bairro é rótulo de agrupamento; seu estado é derivado das faixas dos seus trechos, sem regra própria por bairro ou cota. Sem mapa na interface (decisão de 12/10/2026); Leaflet só em `teste/camadas.html`.
 
 ### Contrato da API — `/api/v1/status-geral` (proposto, a validar na Etapa 1)
 
@@ -72,7 +82,7 @@ Etapa 0 (validar fontes, sem código) é **pré-requisito de tudo**. Depois: 1 m
 | 0 — Validar as fontes | Concluída (informado pelo autor em 08/10/2026). Falta registrar as decisões em "Decisões tomadas". |
 | 1 — Motor único no back-end | Concluída (informado pelo autor em 08/10/2026). |
 | 2 — Pipeline ruas × manchas | Em andamento: ruas baixadas e cruzadas (`scripts/process_geojson.py` → `data/ruas_risco.geojson`, ~30 KB comprimidos). Faltam: commit (2.6), script que gera `data/geojson/` dos brutos (2.1b), tamanho mínimo do pedaço (2.4) e conferência visual (2.7, feita na 3.0). |
-| 3 — Front | Não iniciada. |
+| 3 — Front | Em andamento. A primeira versão (mapa em tela cheia, GPS, estados e Service Worker) foi validada em 12/10/2026 e será **refeita como lista viva** por decisão de UX do mesmo dia (ver Regra de UX). |
 | 4 — Limpeza e README | Não iniciada. |
 
 ## Dados geográficos (`data/geojson/`)
@@ -105,7 +115,7 @@ As três decisões da Etapa 0 (fonte da maré, referencial vertical, limiar pluv
 | Referencial vertical | Decidir após comparar com dados reais (desvio documentado ou ajustar gatilhos) | 0 |
 | Limiar pluvial | Herdar da v1 e revisar depois de eventos reais | 0 |
 | Trecho parcial na mancha | Dividir na borda | 2 |
-| Mapa base offline | Tiles só online; offline só as ruas em risco | 3 |
+| Mapa base offline | Perdeu o sentido: o mapa sai da tela principal (Regra de UX). Se o painel secundário ficar, tiles só online | 3 |
 | Localização do usuário | Ponto-em-polígono, se couber em ~1 MB comprimido; senão proximidade | 3 |
 | Camada de ocorrência | Fora desta entrega | Futuro |
 
@@ -122,7 +132,10 @@ As Etapas 0 e 1 foram concluídas, mas **os valores decididos ainda não foram r
 | Cenário de Itaum | **Mantida como `pluvial_itaum`.** Nota: a mancha coincide espacialmente com a de maré de 2,5 m (100% da área de Itaum, 3,97 km², está dentro dela; 35% dentro da de 1,6 m), então pode representar maré, não chuva. Significado a confirmar na fonte; se for maré, passar ao gatilho de maré. Os trechos nessa área saem com `mare_2_5` + `pluvial_itaum`. | 08/10/2026 |
 | Limiar pluvial | _a preencher_ | |
 | Trecho em mais de uma faixa (front) | Pintar pela **pior faixa ativa** no momento, como o nível global. Rótulos dos níveis: provisórios, vindos do campo `nivel` da API. | 12/10/2026 |
-| Nomes dos níveis | _a preencher_ | |
+| Nomes dos níveis | _a preencher_ (provisório: rótulos vindos do campo `nivel` da API) | |
+| Agrupamento da lista | **Por faixa/área** (Maré de 1,6 m, Maré de 2,5 m, Chuva — Vila Nova, Chuva — Itaum), sem bairro e sem dataset novo | 12/10/2026 |
+| Mapa Leaflet | **Apagado da interface principal e do cache inicial.** `teste/camadas.html` fica só para auditoria | 12/10/2026 |
+| Interface principal | **Lista viva "pior primeiro" + busca + GPS; mapa em tela cheia removido** (ver Regra de UX). | 12/10/2026 |
 
 Decididas nesta fase:
 - Exemplo real de "fora da mancha não significa seguro": a **Rua Minas Gerais** existe no OSM (vários trechos), mas fica a mais de 1,5 km de qualquer mancha usada (nenhum trecho dela entra em `data/ruas_risco.geojson`). Registrada em 08/10/2026; a tela deve manter o aviso de que áreas fora das manchas também podem alagar.

@@ -12,7 +12,6 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
   <link rel="apple-touch-icon" href="https://cdn-icons-png.flaticon.com/512/5664/5664993.png" />
 
-  <link rel="stylesheet" href="vendor/leaflet/leaflet.css" />
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
@@ -46,33 +45,26 @@
       </div>
     </section>
 
-    <section class="search-box">
+    <section class="acoes">
       <button id="btn-location" class="location-btn" type="button">📍 Usar minha localização</button>
       <div id="resultado" class="resultado" role="status" hidden></div>
+      <input id="busca" class="search-input" type="search" placeholder="🔍 Buscar rua ou área (ex: Urussanga, Vila Nova)" autocomplete="off" />
     </section>
 
-    <p id="aviso-mapa" class="aviso" hidden>Não foi possível carregar o mapa de risco. Abra o app com conexão ao menos uma vez.</p>
-    <div id="map" aria-label="Mapa de risco de alagar em Joinville"></div>
+    <p id="aviso-ruas" class="aviso" hidden>Não foi possível carregar a lista de ruas. Abra o app com conexão ao menos uma vez.</p>
 
-    <section class="legenda">
-      <h3>Legenda</h3>
-      <ul id="legenda-faixas"></ul>
-      <ul class="legenda-fixa">
-        <li><span class="cor" style="background:#94a3b8"></span>Faixa inativa agora (cinza)</li>
-        <li><span class="cor tracejado"></span>Faixa indisponível: sem dado válido (tracejado)</li>
-        <li><span class="cor" style="background:#e03131;opacity:.55"></span>Cor esmaecida: dado antigo</li>
-      </ul>
-    </section>
+    <!-- Lista viva: faixas ativas primeiro -->
+    <ul id="lista" class="lista" aria-live="polite"></ul>
+    <p id="sem-resultado" class="resumo" hidden>Nenhuma rua ou área encontrada. Isso não significa que não haja risco de alagar: fora das manchas também pode alagar.</p>
   </main>
 
   <footer>
-    <p><strong>Fora das manchas também pode alagar.</strong> O mapa mostra só os cenários modelados pelo PDDU; falhas de drenagem e chuva local continuam possíveis.</p>
+    <p><strong>Fora das manchas também pode alagar.</strong> A lista mostra só os cenários modelados pelo PDDU; falhas de drenagem e chuva local continuam possíveis.</p>
     <p>Mostra <strong>risco de alagar</strong> estimado a partir de maré e chuva; não confirma alagamento na rua.</p>
     <p>Em emergência, ligue <strong>199 (Defesa Civil)</strong>. Este app não substitui a Defesa Civil.</p>
     <p class="muted">Manchas: PDDU Joinville (2011). Ruas: © colaboradores do <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> (ODbL). Chuva: Open-Meteo.</p>
   </footer>
 
-  <script src="vendor/leaflet/leaflet.js"></script>
   <script src="pip.js"></script>
   <script src="app.js"></script>
 

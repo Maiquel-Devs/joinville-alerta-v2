@@ -1,6 +1,6 @@
 // Service Worker: cache primeiro para tudo que é do próprio app, atualizando em segundo plano.
 // Suba a versão sempre que mudar qualquer arquivo da lista (inclusive data/*.geojson).
-const VERSAO = 'v3';
+const VERSAO = 'v4';
 const CACHE_NAME = `joinville-alerta-v2-${VERSAO}`;
 const ASSETS_TO_CACHE = [
   './',
@@ -9,13 +9,6 @@ const ASSETS_TO_CACHE = [
   './app.js',
   './pip.js',
   './manifest.json',
-  './vendor/leaflet/leaflet.js',
-  './vendor/leaflet/leaflet.css',
-  './vendor/leaflet/images/layers.png',
-  './vendor/leaflet/images/layers-2x.png',
-  './vendor/leaflet/images/marker-icon.png',
-  './vendor/leaflet/images/marker-icon-2x.png',
-  './vendor/leaflet/images/marker-shadow.png',
   './data/geojson/mare_cachoeira_1_6m.geojson',
   './data/geojson/mare_cachoeira_2_5m.geojson',
   './data/geojson/inundacao_vila_nova.geojson',
