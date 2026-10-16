@@ -15,6 +15,7 @@ from config import (
 
 TZ = ZoneInfo("America/Sao_Paulo")
 OPEN_METEO_URL = "https://api.open-meteo.com/v1/forecast"
+HEADERS = {"User-Agent": "JoinvilleAlerta/2.0 (projeto academico Univille; +https://github.com/Maiquel-Devs/joinville-alerta-v2)"}
 
 
 def agora() -> datetime:

@@ -5,7 +5,7 @@ import cache_store
 from config import VALIDADE_MIN
 from mistral_client import gerar_texto
 from risk_engine import INDISPONIVEL, avaliar_faixas, faixas_ativas, nivel_global
-from sources import agora, buscar_chuva, buscar_mare
+from sources import HEADERS, agora, buscar_chuva, buscar_mare
 
 
 def montar_resultado(mare: dict | None, chuva: dict, quando) -> dict:
@@ -29,7 +29,7 @@ def montar_resultado(mare: dict | None, chuva: dict, quando) -> dict:
 async def update_telemetry_job() -> None:
     print("[CRON]: coletando chuva (Open-Meteo) e maré (CIRAM)...")
     quando = agora()
-    async with httpx.AsyncClient(timeout=15.0) as client:
+    async with httpx.AsyncClient(timeout=15.0, headers=HEADERS) as client:
         chuva = await buscar_chuva(client)
         mare = await buscar_mare(client, quando)
 
