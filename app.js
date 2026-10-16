@@ -100,7 +100,7 @@
       $('ai-message').textContent = 'Não foi possível obter o estado atual. Isso não significa que não há risco de alagar.';
     } else {
       $('ai-title').textContent = texto?.titulo ?? 'Veja a lista abaixo';
-      $('ai-message').textContent = texto?.mensagem ?? 'Áreas fora das manchas também podem alagar.';
+      $('ai-message').textContent = texto?.mensagem ?? 'Áreas fora das regiões mapeadas também podem alagar.';
     }
 
     const chuva = Number(d?.chuva_24h_mm);
@@ -171,7 +171,7 @@
     const det = document.createElement('details');
     det.open = busca ? true : aberto.get(f.id) ?? e === 'ativa';
     const sum = document.createElement('summary');
-    sum.textContent = busca ? `${ruas.length} de ${total} ruas` : `${total} ruas nesta mancha`;
+    sum.textContent = busca ? `${ruas.length} de ${total} ruas` : `${total} ruas nesta área`;
     const ul = document.createElement('ul');
     ul.className = 'ruas';
     det.append(sum, ul);
@@ -199,7 +199,7 @@
     if (!ruas.length) {
       const vazio = document.createElement('p');
       vazio.className = 'resumo';
-      vazio.textContent = 'Nenhuma rua encontrada nesta mancha.';
+      vazio.textContent = 'Nenhuma rua encontrada nesta área.';
       det.append(vazio);
     }
     li.append(det);
@@ -248,18 +248,18 @@
     if (dentro.length) {
       const ativas = dentro.filter((f) => estadoFaixa(f.id) === 'ativa');
       p.textContent = ativas.length
-        ? 'Você está numa mancha com faixa ativa agora: há risco de alagar aqui.'
-        : 'Você está dentro de uma mancha de risco, mas nenhuma faixa dela está ativa agora (ou o estado está indisponível). O risco de alagar muda com maré e chuva.';
+        ? 'Você está numa área mapeada com faixa ativa agora: há risco de alagar aqui.'
+        : 'Você está dentro de uma região mapeada de risco, mas nenhuma faixa dela está ativa agora (ou o estado está indisponível). O risco de alagar muda com maré e chuva.';
       for (const f of dentro) {
         const li = document.createElement('li');
         li.textContent = `${f.rotulo}: ${TEXTO_ESTADO[estadoFaixa(f.id)]}`;
         lista.append(li);
       }
     } else {
-      p.textContent = 'Você está fora das manchas mapeadas. Isso não significa que não haja risco de alagar.';
+      p.textContent = 'Você está fora das áreas mapeadas. Isso não significa que não haja risco de alagar.';
     }
     const nota = document.createElement('small');
-    nota.textContent = `Precisão do GPS: ±${Math.round(precisao)} m. Perto da borda de uma mancha o resultado é incerto. Este app não substitui a Defesa Civil (199).`;
+    nota.textContent = `Precisão do GPS: ±${Math.round(precisao)} m. Perto da borda de uma área mapeada o resultado é incerto. Este app não substitui a Defesa Civil (199).`;
     caixa.replaceChildren(p, lista, nota);
     caixa.hidden = false;
   }
@@ -287,7 +287,7 @@
           mostrarResultado(dentro, accuracy);
         } catch (e) {
           console.warn('Falha ao carregar as manchas:', e);
-          aviso('Não foi possível carregar as manchas para conferir sua posição. Tente de novo com conexão.');
+          aviso('Não foi possível carregar as áreas mapeadas para conferir sua posição. Tente de novo com conexão.');
         } finally {
           volta();
         }
