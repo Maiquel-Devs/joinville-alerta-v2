@@ -129,6 +129,7 @@
   // --- lista viva ----------------------------------------------------------------------
   const ruasPorFaixa = {}; // id -> [{nome, chave, m}] em ordem alfabética
   let ruasCarregadas = false;
+  let ruasFalhou = false;
   let busca = '';
   const aberto = new Map(); // id -> escolha do usuário (aberto/fechado)
   const limite = new Map(); // id -> quantas ruas desenhar
@@ -163,7 +164,7 @@
     if (!ruasCarregadas) {
       const p = document.createElement('p');
       p.className = 'resumo';
-      p.textContent = 'Carregando ruas...';
+      p.textContent = ruasFalhou ? 'Lista de ruas indisponível agora. O estado desta faixa continua valendo.' : 'Carregando ruas...';
       li.append(p);
       return li;
     }
@@ -318,15 +319,28 @@
     if (salvo) estado = { dados: salvo, origem: 'salvo' };
     renderTudo();
 
-    const ruasP = carregarJson(RUAS_ARQ)
-      .then((c) => {
-        indexarRuas(c);
-        renderLista();
-      })
-      .catch((e) => {
-        console.warn('Falha ao carregar as ruas:', e);
+    // Ruas: até 3 tentativas (cache do Service Worker primeiro); só avisa se todas falharem.
+    const carregarRuas = async () => {
+      for (let i = 0; i < 3 && !ruasCarregadas; i++) {
+        try {
+          indexarRuas(await carregarJson(RUAS_ARQ));
+          ruasFalhou = false;
+          $('aviso-ruas').hidden = true;
+        } catch (e) {
+          console.warn(`Falha ao carregar as ruas (tentativa ${i + 1}/3):`, e);
+          if (i < 2) await new Promise((r) => setTimeout(r, 1500 * (i + 1)));
+        }
+      }
+      if (!ruasCarregadas) {
+        ruasFalhou = true;
         $('aviso-ruas').hidden = false;
-      });
+      }
+      renderLista();
+    };
+    const ruasP = carregarRuas();
+    window.addEventListener('online', () => {
+      if (!ruasCarregadas) carregarRuas();
+    });
 
     estado = await buscarEstado();
     renderTudo();
