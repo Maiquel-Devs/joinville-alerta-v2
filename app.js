@@ -3,7 +3,8 @@
 (() => {
   const API = 'https://joinville-alerta-v2.onrender.com/api/v1/status-geral';
   const CHAVE_SALVO = 'ja2_ultimo_estado';
-  const TIMEOUT_API_MS = 60000; // o Render gratuito hiberna; a primeira resposta é lenta
+  const TIMEOUT_API_MS = 45000; // por tentativa; o Render gratuito hiberna e a primeira resposta é lenta
+  const TENTATIVAS_API = 2; // a 2ª pega o servidor já acordado
   const LIMITE_RUAS = 60; // ruas desenhadas por cartão antes de "mostrar mais"
 
   // Ordem = prioridade de exibição entre faixas ativas (pior primeiro). Espelha o backend
@@ -47,24 +48,40 @@
     }
   }
 
-  async function buscarEstado() {
+  // Uma tentativa na API; lança erro se falhar, estourar o tempo ou vier sem objeto.
+  async function pedirApi(n) {
     const ctrl = new AbortController();
     const t = setTimeout(() => ctrl.abort(), TIMEOUT_API_MS);
+    const ini = performance.now();
     try {
+      console.log(`[API] tentativa ${n}/${TENTATIVAS_API}: GET ${API}`);
       const res = await fetch(API, { signal: ctrl.signal });
+      console.log(`[API] HTTP ${res.status} em ${Math.round(performance.now() - ini)} ms`);
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const json = await res.json();
+      console.log('[API] resposta do back-end:', json);
       const dados = json?.data ?? json;
       if (dados == null || typeof dados !== 'object') throw new Error('Resposta sem dados');
-      salvar(dados);
-      return { dados, origem: 'rede' };
-    } catch (e) {
-      console.warn('API indisponível, usando último estado salvo:', e);
-      const salvo = lerSalvo();
-      return salvo ? { dados: salvo, origem: 'salvo' } : { dados: null, origem: 'nenhum' };
+      return dados;
     } finally {
       clearTimeout(t);
     }
+  }
+
+  async function buscarEstado() {
+    for (let n = 1; n <= TENTATIVAS_API; n++) {
+      try {
+        const dados = await pedirApi(n);
+        salvar(dados);
+        return { dados, origem: 'rede' };
+      } catch (e) {
+        console.error(`[API] tentativa ${n}/${TENTATIVAS_API} falhou:`, e);
+        if (n < TENTATIVAS_API) await new Promise((r) => setTimeout(r, 3000));
+      }
+    }
+    console.error('[API] todas as tentativas falharam; usando último estado salvo, se houver.');
+    const salvo = lerSalvo();
+    return salvo ? { dados: salvo, origem: 'salvo' } : { dados: null, origem: 'nenhum' };
   }
 
   // Dado ausente nunca vira "normal": faixa sem estado = indisponível.

@@ -1,5 +1,6 @@
 # backend/sources.py
 # Coleta de dados externos. Cada função devolve None quando não há dado válido.
+import asyncio
 from datetime import datetime, timedelta
 from zoneinfo import ZoneInfo
 
@@ -43,28 +44,35 @@ def somar_chuva(horas: list[str], precipitacao: list, hora_atual: str) -> dict[s
     return {"chuva_24h_mm": janela(24), "chuva_48h_mm": janela(48)}
 
 
-async def buscar_chuva(client: httpx.AsyncClient) -> dict[str, float | None]:
+async def buscar_chuva(client: httpx.AsyncClient, tentativas: int = 3) -> dict[str, float | None]:
+    """Open-Meteo com retentativa (IPs compartilhados do Render às vezes levam 429/timeout).
+
+    Esgotadas as tentativas devolve None: sem chuva válida a faixa pluvial fica
+    `indisponivel`, nunca 0 mm.
+    """
     vazio = {"chuva_24h_mm": None, "chuva_48h_mm": None}
-    try:
-        res = await client.get(
-            OPEN_METEO_URL,
-            params={
-                "latitude": LATITUDE,
-                "longitude": LONGITUDE,
-                "current": "precipitation",
-                "hourly": "precipitation",
-                "past_days": 2,
-                "forecast_days": 1,
-                "timezone": "America/Sao_Paulo",
-            },
-        )
-        res.raise_for_status()
-        d = res.json()
-        hora_atual = d["current"]["time"][:13] + ":00"
-        return somar_chuva(d["hourly"]["time"], d["hourly"]["precipitation"], hora_atual)
-    except Exception as e:
-        print(f"[ERRO OPEN-METEO]: {e}")
-        return vazio
+    params = {
+        "latitude": LATITUDE,
+        "longitude": LONGITUDE,
+        "current": "precipitation",
+        "hourly": "precipitation",
+        "past_days": 2,
+        "forecast_days": 1,
+        "timezone": "America/Sao_Paulo",
+    }
+    for n in range(1, tentativas + 1):
+        try:
+            res = await client.get(OPEN_METEO_URL, params=params)
+            res.raise_for_status()
+            d = res.json()
+            hora_atual = d["current"]["time"][:13] + ":00"
+            return somar_chuva(d["hourly"]["time"], d["hourly"]["precipitation"], hora_atual)
+        except Exception as e:
+            corpo = getattr(getattr(e, "response", None), "text", "")[:200]
+            print(f"[ERRO OPEN-METEO] tentativa {n}/{tentativas}: {type(e).__name__}: {e} {corpo}")
+            if n < tentativas:
+                await asyncio.sleep(2 * n)
+    return vazio
 
 
 # --- Maré (marégrafo CIRAM/Epagri, Joinville) --------------------------------
