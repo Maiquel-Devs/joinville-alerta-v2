@@ -10,8 +10,8 @@
   // Ordem = prioridade de exibição entre faixas ativas (pior primeiro). Espelha o backend
   // (config.NIVEL_DA_FAIXA); o front não decide nível. Cada faixa é um grupo da lista.
   const FAIXAS = [
-    { id: 'mare_2_5', rotulo: 'Maré — Zonas Baixas e Adjacências (Cota 2,5m)', mancha: 'data/geojson/mare_cachoeira_2_5m.geojson' },
-    { id: 'mare_1_6', rotulo: 'Maré — Centro e Bacia do Cachoeira (Cota 1,6m)', mancha: 'data/geojson/mare_cachoeira_1_6m.geojson' },
+    { id: 'mare_2_5', rotulo: 'Maré — Calha Baixa do Cachoeira e Estuário (2,5m)', mancha: 'data/geojson/mare_cachoeira_2_5m.geojson' },
+    { id: 'mare_1_6', rotulo: 'Maré — Bacia do Cachoeira / Cotas Intermediárias (1,6m)', mancha: 'data/geojson/mare_cachoeira_1_6m.geojson' },
     { id: 'pluvial_vila_nova', rotulo: 'Chuva — Vila Nova', mancha: 'data/geojson/inundacao_vila_nova.geojson' },
     { id: 'pluvial_itaum', rotulo: 'Chuva — Itaum', mancha: 'data/geojson/inundacao_itaum.geojson' },
   ];
