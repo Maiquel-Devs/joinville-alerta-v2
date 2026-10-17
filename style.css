@@ -56,7 +56,7 @@ header p { font-size: 0.8rem; color: var(--text-muted); }
   background: var(--card-bg);
   border: 2px solid var(--nivel-indisponivel);
   border-radius: 8px;
-  padding: 14px;
+  padding: 16px;
   margin-bottom: 12px;
 }
 .ai-card.nivel-normal { border-color: var(--nivel-normal); }
@@ -71,10 +71,15 @@ header p { font-size: 0.8rem; color: var(--text-muted); }
   margin-bottom: 8px;
 }
 .badge-risk {
-  padding: 3px 10px;
-  border-radius: 999px;
-  font-size: 0.75rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  white-space: nowrap;
+  padding: 6px 14px;
+  border-radius: 20px;
+  font-size: 0.85rem;
   font-weight: 700;
+  letter-spacing: 0.5px;
   color: #fff;
   background: var(--nivel-indisponivel);
 }
@@ -82,7 +87,13 @@ header p { font-size: 0.8rem; color: var(--text-muted); }
 .badge-risk.nivel-atencao { background: #ca8a04; }
 .badge-risk.nivel-alto { background: var(--nivel-alto); }
 
-.ai-card h2 { font-size: 1.05rem; margin-bottom: 6px; }
+.ai-header small { font-size: 0.75rem; opacity: 0.75; text-align: right; }
+@media (max-width: 480px) {
+  .ai-header { flex-direction: column; align-items: flex-start; gap: 8px; }
+  .ai-header small { text-align: left; }
+}
+
+.ai-card h2 { font-size: 1.1rem; font-weight: 700; margin-bottom: 6px; }
 .ai-card p { font-size: 0.88rem; color: #e2e8f0; }
 
 .metrics-grid {
