@@ -133,9 +133,11 @@ As Etapas 0 e 1 foram concluídas, mas **os valores decididos ainda não foram r
 | Limiar pluvial | _a preencher_ | |
 | Trecho em mais de uma faixa (front) | Pintar pela **pior faixa ativa** no momento, como o nível global. Rótulos dos níveis: provisórios, vindos do campo `nivel` da API. | 12/10/2026 |
 | Nomes dos níveis | _a preencher_ (provisório: rótulos vindos do campo `nivel` da API) | |
-| Agrupamento da lista | **Por faixa/área** (Maré de 1,6 m, Maré de 2,5 m, Chuva — Vila Nova, Chuva — Itaum), sem bairro e sem dataset novo | 12/10/2026 |
+| Agrupamento da lista | **Por faixa/área** (Maré 1,6 m, Maré 2,5 m, Chuva — Vila Nova, Chuva — Itaum; rótulos completos na linha seguinte), sem bairro e sem dataset novo | 12/10/2026 |
 | Mapa Leaflet | **Apagado da interface principal e do cache inicial.** `teste/camadas.html` fica só para auditoria | 12/10/2026 |
 | Interface principal | **Lista viva "pior primeiro" + busca + GPS; mapa em tela cheia removido** (ver Regra de UX). | 12/10/2026 |
+| Rótulos das faixas de maré | **"Maré — Bacia do Cachoeira / Cotas Intermediárias (1,6m)"** e **"Maré — Calha Baixa do Cachoeira e Estuário (2,5m)"**. Sem bairros: nenhum dado do projeto liga bairro a mancha, e citar bairro sem cruzamento GIS induziria erro. "Cachoeira" vem dos arquivos das manchas; "Cotas Intermediárias", "Calha Baixa" e "Estuário" são termos do autor, **a conferir na cartilha do PDDU**. | 16/10/2026 |
+| UX mobile da lista viva | Faixa `ativa` abre o `<details>` sozinha; inativa fica recolhida (a escolha do usuário prevalece). Cada rua mostra só o nome, em linha flex com alvo de toque ≥ 44 px e quebra de nomes longos. **Só a faixa ativa marca a rua** (🔴 "Faixa ativa"); inativa e indisponível ficam sem marca, pois o estado já está no cabeçalho do cartão. **Sem verde/"normal" e sem amarelo:** verde passaria a ideia de "sem risco" e o back-end não informa gravidade por faixa (exigiria regra de risco no front). Rodapé sem menção a mapa ou "mancha": "áreas mapeadas pelo PDDU". | 16/10/2026 |
 
 Decididas nesta fase:
 - Exemplo real de "fora da mancha não significa seguro": a **Rua Minas Gerais** existe no OSM (vários trechos), mas fica a mais de 1,5 km de qualquer mancha usada (nenhum trecho dela entra em `data/ruas_risco.geojson`). Registrada em 08/10/2026; a tela deve manter o aviso de que áreas fora das manchas também podem alagar.
