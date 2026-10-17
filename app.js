@@ -20,7 +20,7 @@
   const filtroDe = (id) => (id === 'pluvial_vila_nova' ? (f) => f.properties.status_1 === 'Atual' && f.properties.tempretor === '25 anos' : undefined);
 
   // Rótulo curto do estado da faixa em cada rua (o front só repete o que o back-end decidiu).
-  const TAG_RUA = { ativa: '🔴 Faixa ativa', inativa: '⚪ Nenhuma faixa ativa agora', indisponivel: '⚪ Indisponível' };
+  const TAG_RUA_ATIVA = '🔴 Faixa ativa';
   const ROTULO_NIVEL = { atencao: 'atenção', indisponivel: 'indisponível' }; // provisório (CLAUDE.md: nomes dos níveis em aberto)
   const TEXTO_ESTADO = {
     ativa: 'Faixa ativa agora: risco de alagar',
@@ -202,10 +202,17 @@
     const ate = limite.get(f.id) || LIMITE_RUAS;
     for (const r of ruas.slice(0, ate)) {
       const item = document.createElement('li');
-      const tag = document.createElement('span');
-      tag.className = `tag ${e}`;
-      tag.textContent = TAG_RUA[e];
-      item.append(r.nome, ' ', tag);
+      const nome = document.createElement('span');
+      nome.className = 'nome-rua';
+      nome.textContent = r.nome;
+      item.append(nome);
+      if (e === 'ativa') {
+        // Só a faixa ativa marca a rua; o estado das demais já está no cabeçalho do cartão.
+        const tag = document.createElement('span');
+        tag.className = 'tag ativa';
+        tag.textContent = TAG_RUA_ATIVA;
+        item.append(tag);
+      }
       ul.append(item);
     }
     if (ruas.length > ate) {

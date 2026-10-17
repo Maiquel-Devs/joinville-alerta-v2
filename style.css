@@ -179,8 +179,8 @@ footer {
 footer p { margin-bottom: 6px; }
 footer strong { color: var(--text-primary); }
 
-/* Marca de estado em cada rua: ícone + texto (não depende só de cor) */
-.cartao .ruas li { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
-.tag { flex: none; font-size: 0.72rem; font-weight: 600; padding: 2px 8px; border-radius: 999px; border: 1px solid var(--border-color); color: var(--text-muted); }
+/* Rua: nome à esquerda, marca só quando a faixa está ativa */
+.cartao .ruas li { display: flex; justify-content: space-between; align-items: center; gap: 8px; padding: 10px 12px; min-height: 44px; }
+.nome-rua { flex: 1 1 0; min-width: 0; overflow-wrap: anywhere; word-break: break-word; font-weight: 500; }
+.tag { flex: none; white-space: nowrap; font-size: 0.72rem; font-weight: 600; padding: 2px 8px; border-radius: 999px; border: 1px solid var(--border-color); color: var(--text-muted); }
 .tag.ativa { background: #7f1d1d; border-color: #fca5a5; color: #fee2e2; }
-.tag.indisponivel { border-style: dashed; }
