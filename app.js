@@ -10,8 +10,8 @@
   // Ordem = prioridade de exibição entre faixas ativas (pior primeiro). Espelha o backend
   // (config.NIVEL_DA_FAIXA); o front não decide nível. Cada faixa é um grupo da lista.
   const FAIXAS = [
-    { id: 'mare_2_5', rotulo: 'Maré de 2,5 m', mancha: 'data/geojson/mare_cachoeira_2_5m.geojson' },
-    { id: 'mare_1_6', rotulo: 'Maré de 1,6 m', mancha: 'data/geojson/mare_cachoeira_1_6m.geojson' },
+    { id: 'mare_2_5', rotulo: 'Maré — Zonas Baixas e Adjacências (Cota 2,5m)', mancha: 'data/geojson/mare_cachoeira_2_5m.geojson' },
+    { id: 'mare_1_6', rotulo: 'Maré — Centro e Bacia do Cachoeira (Cota 1,6m)', mancha: 'data/geojson/mare_cachoeira_1_6m.geojson' },
     { id: 'pluvial_vila_nova', rotulo: 'Chuva — Vila Nova', mancha: 'data/geojson/inundacao_vila_nova.geojson' },
     { id: 'pluvial_itaum', rotulo: 'Chuva — Itaum', mancha: 'data/geojson/inundacao_itaum.geojson' },
   ];
@@ -19,6 +19,8 @@
   // Vila Nova: decisão de 08/10/2026 (cenário Atual, 25 anos). Ver CLAUDE.md.
   const filtroDe = (id) => (id === 'pluvial_vila_nova' ? (f) => f.properties.status_1 === 'Atual' && f.properties.tempretor === '25 anos' : undefined);
 
+  // Rótulo curto do estado da faixa em cada rua (o front só repete o que o back-end decidiu).
+  const TAG_RUA = { ativa: '🔴 Faixa ativa', inativa: '⚪ Nenhuma faixa ativa agora', indisponivel: '⚪ Indisponível' };
   const ROTULO_NIVEL = { atencao: 'atenção', indisponivel: 'indisponível' }; // provisório (CLAUDE.md: nomes dos níveis em aberto)
   const TEXTO_ESTADO = {
     ativa: 'Faixa ativa agora: risco de alagar',
@@ -200,7 +202,10 @@
     const ate = limite.get(f.id) || LIMITE_RUAS;
     for (const r of ruas.slice(0, ate)) {
       const item = document.createElement('li');
-      item.textContent = r.nome;
+      const tag = document.createElement('span');
+      tag.className = `tag ${e}`;
+      tag.textContent = TAG_RUA[e];
+      item.append(r.nome, ' ', tag);
       ul.append(item);
     }
     if (ruas.length > ate) {

@@ -178,3 +178,9 @@ footer {
 }
 footer p { margin-bottom: 6px; }
 footer strong { color: var(--text-primary); }
+
+/* Marca de estado em cada rua: ícone + texto (não depende só de cor) */
+.cartao .ruas li { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+.tag { flex: none; font-size: 0.72rem; font-weight: 600; padding: 2px 8px; border-radius: 999px; border: 1px solid var(--border-color); color: var(--text-muted); }
+.tag.ativa { background: #7f1d1d; border-color: #fca5a5; color: #fee2e2; }
+.tag.indisponivel { border-style: dashed; }
