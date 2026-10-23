@@ -411,8 +411,10 @@
       card.textContent = ruasFalhou ? 'Lista de ruas indisponível agora.' : 'Carregando ruas...';
     } else if (!achadas.length) {
       const p = document.createElement('p');
-      p.textContent = 'Não encontrei essa rua nas áreas mapeadas pelo PDDU. Isso não significa que não haja risco de alagar: fora das áreas mapeadas também pode alagar.';
-      card.append(p, rodapeEmergencia());
+      const h = document.createElement('h3');
+      h.textContent = '⚪ Rua fora das áreas mapeadas';
+      p.textContent = 'Não encontrei essa rua nas áreas mapeadas pelo PDDU. Isso não é garantia de segurança: o PDDU cobre só alguns cenários, e falhas de drenagem e chuva local podem alagar qualquer rua. Confira o nome (sem número nem bairro) e, se estiver preocupado, ligue para a Defesa Civil (199).';
+      card.append(h, p, rodapeEmergencia());
     } else {
       const r = achadas[0];
       const e = estadoDaRua(r);
@@ -427,14 +429,14 @@
           ? `🟠 Situação: RISCO DE ALAGAR EM TRECHOS DA VIA (${ativas.map((f) => f.rotulo).join('; ')})`
           : e === 'indisponivel'
             ? '⚪ Situação: estado indisponível. Isso não significa que não haja risco de alagar.'
-            : '⚪ Situação: nenhuma faixa ativa agora para esta via';
+            : '⚪ Situação: nenhuma faixa ativa agora para esta via (a via tem trechos em área mapeada)';
       const sig = document.createElement('p');
       sig.textContent =
         e === 'ativa'
           ? `Cerca de ${Math.round(r.m)} m desta via estão dentro da área mapeada, com faixa ativa agora. O risco de alagar pode se concentrar em partes da rua e não necessariamente em toda a extensão. Se você mora em andar térreo, tem comércio ao nível da rua ou garagem em subsolo, previna-se e acompanhe a Defesa Civil (199).`
           : e === 'indisponivel'
             ? 'Esta via tem trechos dentro de área mapeada pelo PDDU, mas não há dado válido para dizer se alguma faixa está ativa. Trate como possível risco de alagar e acompanhe a Defesa Civil (199).'
-            : 'Esta via tem trechos dentro de área mapeada pelo PDDU, mas nenhuma faixa dela está ativa agora. O risco de alagar muda com a maré e a chuva.';
+            : 'Esta via tem trechos dentro de área mapeada pelo PDDU, mas nenhuma faixa dela está ativa agora. Isso não quer dizer que o terreno seja alto nem que não haja risco de alagar: o risco muda com a maré e a chuva, e outras faixas podem ativar.';
       card.append(h, sit, sig);
       if (Number.isFinite(r.cmin)) {
         // Informativo. Não há comparação com a maré: o referencial vertical das curvas não está confirmado
