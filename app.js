@@ -393,7 +393,9 @@
 
   function mostrarDiagnostico(texto) {
     const caixa = $('resultado');
-    if (texto.trim().length < 3) {
+    const ativa = texto.trim().length >= 3;
+    $('lista-geral').hidden = ativa; // com busca ativa o foco é só o diagnóstico
+    if (!ativa) {
       caixa.hidden = true;
       return;
     }
@@ -424,7 +426,9 @@
       sig.textContent =
         e === 'ativa'
           ? 'Esta via tem trechos dentro da área mapeada e há risco de alagar agora. Se você mora em andar térreo, tem comércio ao nível da rua ou garagem em subsolo, previna-se e acompanhe a Defesa Civil (199).'
-          : 'Esta via tem trechos dentro de área mapeada pelo PDDU, mas nenhuma faixa dela está ativa agora. O risco de alagar muda com a maré e a chuva.';
+          : e === 'indisponivel'
+            ? 'Esta via tem trechos dentro de área mapeada pelo PDDU, mas não há dado válido para dizer se alguma faixa está ativa. Trate como possível risco de alagar e acompanhe a Defesa Civil (199).'
+            : 'Esta via tem trechos dentro de área mapeada pelo PDDU, mas nenhuma faixa dela está ativa agora. O risco de alagar muda com a maré e a chuva.';
       card.append(h, sit, sig, blocoEntorno(r.pts, r.nome));
       if (achadas.length > 1) {
         const outras = document.createElement('small');
