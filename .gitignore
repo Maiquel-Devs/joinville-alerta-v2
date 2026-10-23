@@ -21,3 +21,7 @@ data/raw/
 
 # Dados brutos do joinville_meteo (Zenodo, CC BY 4.0): ficam só no computador do autor
 joinville_meteo_dados/
+
+# Altimetria e modelo de terreno brutos (SIMGeo/Prefeitura): só no computador do autor
+shp_altimetria/
+shp_modeloterr/

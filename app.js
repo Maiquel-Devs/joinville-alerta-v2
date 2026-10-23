@@ -183,13 +183,15 @@
   function indexarRuas(colecao) {
     const mapa = Object.fromEntries(FAIXAS.map((f) => [f.id, new Map()]));
     for (const feat of colecao.features) {
-      const { nome, faixas, m } = feat.properties;
+      const { nome, faixas, m, cota_minima: cmin, cota_maxima: cmax } = feat.properties;
       if (!nome) continue;
       const g = feat.geometry;
       const linhas = g.type === 'MultiLineString' ? g.coordinates : [g.coordinates];
-      const rua = ruasIdx.get(nome) ?? { nome, chave: semAcento(nome), faixas: new Set(), pts: [], m: 0 };
+      const rua = ruasIdx.get(nome) ?? { nome, chave: semAcento(nome), faixas: new Set(), pts: [], m: 0, cmin: Infinity, cmax: -Infinity };
       for (const id of faixas) rua.faixas.add(id);
       rua.m += m; // metros de via dentro das áreas mapeadas
+      if (cmin != null) rua.cmin = Math.min(rua.cmin, cmin);
+      if (cmax != null) rua.cmax = Math.max(rua.cmax, cmax);
       for (const l of linhas) rua.pts.push(...l);
       ruasIdx.set(nome, rua);
       for (const id of faixas) mapa[id]?.set(nome, (mapa[id].get(nome) || 0) + m);
@@ -433,7 +435,15 @@
           : e === 'indisponivel'
             ? 'Esta via tem trechos dentro de área mapeada pelo PDDU, mas não há dado válido para dizer se alguma faixa está ativa. Trate como possível risco de alagar e acompanhe a Defesa Civil (199).'
             : 'Esta via tem trechos dentro de área mapeada pelo PDDU, mas nenhuma faixa dela está ativa agora. O risco de alagar muda com a maré e a chuva.';
-      card.append(h, sit, sig, blocoEntorno(r.pts, r.nome));
+      card.append(h, sit, sig);
+      if (Number.isFinite(r.cmin)) {
+        // Informativo. Não há comparação com a maré: o referencial vertical das curvas não está confirmado
+        // e a precisão é de ~1 m, maior que a diferença entre os gatilhos.
+        const alt = document.createElement('small');
+        alt.textContent = `Altitude aproximada da via: ${r.cmin.toFixed(1)} a ${r.cmax.toFixed(1)} m (curvas de nível da Prefeitura, margem de cerca de 1 m). Não compare com a altura da maré: o referencial vertical não está confirmado.`;
+        card.append(alt);
+      }
+      card.append(blocoEntorno(r.pts, r.nome));
       if (achadas.length > 1) {
         const outras = document.createElement('small');
         outras.textContent = `Outras ruas com esse nome: ${achadas.slice(1, 6).map((x) => x.nome).join('; ')}${achadas.length > 6 ? '…' : ''}`;
