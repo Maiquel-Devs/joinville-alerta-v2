@@ -70,7 +70,31 @@
     }
   }
 
+  // TODO: REMOVER MOCK DE TESTE (bloco até o fim de buscarEstado e a linha "estado.simulado" nos avisos)
+  // Simulação visual de faixa ativa. Só liga com ?simular=<faixa> na URL (ex.: ?simular=mare_2_5
+  // ou ?simular=pluvial_itaum); sem o parâmetro o app usa a API normalmente. Não grava nada salvo.
   async function buscarEstado() {
+    const r = await buscarEstadoReal();
+    const id = new URLSearchParams(location.search).get('simular');
+    if (!FAIXAS.some((f) => f.id === id)) return r;
+    const base = r.dados ?? {};
+    console.warn(`[MOCK] simulando faixa ativa: ${id}`);
+    return {
+      origem: 'rede',
+      simulado: true,
+      dados: {
+        ...base,
+        status: 'ok',
+        gerado_em: new Date().toISOString(),
+        validade_min: 30,
+        faixas: { mare_1_6: 'inativa', mare_2_5: 'inativa', pluvial_vila_nova: 'inativa', pluvial_itaum: 'inativa', [id]: 'ativa' },
+        nivel: id === 'mare_2_5' ? 'alto' : 'atencao',
+        texto: { titulo: 'SIMULAÇÃO DE TESTE', mensagem: 'Estado simulado só para testar a tela. Não é um alerta real.' },
+      },
+    };
+  }
+
+  async function buscarEstadoReal() {
     for (let n = 1; n <= TENTATIVAS_API; n++) {
       try {
         const dados = await pedirApi(n);
@@ -134,6 +158,7 @@
       : 'Joinville - SC • sem dados do servidor';
 
     const avisos = [];
+    if (estado.simulado) avisos.push('SIMULAÇÃO DE TESTE: este estado não é real.'); // TODO: REMOVER MOCK DE TESTE
     if (!d) avisos.push('Sem dados atuais: não foi possível falar com o servidor e não há estado salvo.');
     else if (d.status === 'indisponivel') avisos.push('O servidor não tem dado válido agora. As faixas aparecem como indisponíveis.');
     if (d && estado.origem === 'salvo') avisos.push('Sem conexão com o servidor: mostrando o último estado salvo.');
