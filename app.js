@@ -178,11 +178,19 @@
   const aberto = new Map(); // id -> escolha do usuário (aberto/fechado)
   const expandidas = new Set(); // ids de faixa em que o usuário pediu a lista completa
 
+  const ruasIdx = new Map(); // nome -> { nome, chave, faixas:Set, pts:[[lng,lat]] }
+
   function indexarRuas(colecao) {
     const mapa = Object.fromEntries(FAIXAS.map((f) => [f.id, new Map()]));
     for (const feat of colecao.features) {
       const { nome, faixas, m } = feat.properties;
       if (!nome) continue;
+      const g = feat.geometry;
+      const linhas = g.type === 'MultiLineString' ? g.coordinates : [g.coordinates];
+      const rua = ruasIdx.get(nome) ?? { nome, chave: semAcento(nome), faixas: new Set(), pts: [] };
+      for (const id of faixas) rua.faixas.add(id);
+      for (const l of linhas) rua.pts.push(...l);
+      ruasIdx.set(nome, rua);
       for (const id of faixas) mapa[id]?.set(nome, (mapa[id].get(nome) || 0) + m);
     }
     for (const f of FAIXAS) {
@@ -304,7 +312,132 @@
     return promessaManchas;
   }
 
-  function mostrarResultado(dentro, precisao) {
+  // --- diagnóstico por endereço + entorno (~300 m) ---------------------------------------
+  // Só usa o que o projeto sabe: ruas dentro das áreas mapeadas e o estado das faixas vindo do
+  // back-end. Não há cota nem severidade por rua, então não existe "segura", "atenção" nem rota.
+  const RAIO_ENTORNO_M = 300;
+  const MAX_ENTORNO = 4;
+  const distM = (a, b) => {
+    const dx = (b[0] - a[0]) * Math.cos((a[1] * Math.PI) / 180) * 111320;
+    const dy = (b[1] - a[1]) * 110540;
+    return Math.hypot(dx, dy);
+  };
+  const amostrar = (pts) => (pts.length > 400 ? pts.filter((_, i) => i % Math.ceil(pts.length / 400) === 0) : pts);
+  const distMin = (A, B) => {
+    let m = Infinity;
+    for (const a of A) for (const b of B) m = Math.min(m, distM(a, b));
+    return m;
+  };
+  function estadoDaRua(r) {
+    const es = [...r.faixas].map(estadoFaixa);
+    return es.includes('ativa') ? 'ativa' : es.includes('indisponivel') ? 'indisponivel' : 'inativa';
+  }
+  const ICONE_RUA = { ativa: '🔴', inativa: '⚪', indisponivel: '⚪' };
+  const TEXTO_RUA = { ativa: 'faixa ativa agora', inativa: 'nenhuma faixa ativa agora', indisponivel: 'estado indisponível' };
+
+  function vizinhas(pts, excluir) {
+    const ref = amostrar(pts);
+    const out = [];
+    for (const r of ruasIdx.values()) {
+      if (r.nome === excluir) continue;
+      const d = distMin(ref, amostrar(r.pts));
+      if (d <= RAIO_ENTORNO_M) out.push({ r, d });
+    }
+    // Faixa ativa primeiro, depois a mais próxima
+    out.sort((a, b) => (estadoDaRua(b.r) === 'ativa') - (estadoDaRua(a.r) === 'ativa') || a.d - b.d);
+    return out.slice(0, MAX_ENTORNO);
+  }
+
+  function blocoEntorno(pts, excluir) {
+    const viz = vizinhas(pts, excluir);
+    const sec = document.createElement('div');
+    sec.className = 'entorno';
+    const h = document.createElement('h4');
+    h.textContent = `🧭 Ruas mapeadas ao redor (até ~${RAIO_ENTORNO_M} m)`;
+    sec.append(h);
+    if (!viz.length) {
+      const p = document.createElement('p');
+      p.className = 'resumo';
+      p.textContent = 'Nenhuma outra rua das áreas mapeadas neste raio. Isso não significa que não haja risco de alagar.';
+      sec.append(p);
+      return sec;
+    }
+    const ul = document.createElement('ul');
+    for (const { r, d } of viz) {
+      const e = estadoDaRua(r);
+      const li = document.createElement('li');
+      li.textContent = `${ICONE_RUA[e]} ${r.nome} (a ~${Math.max(10, Math.round(d / 10) * 10)} m): ${TEXTO_RUA[e]}`;
+      ul.append(li);
+    }
+    const nota = document.createElement('small');
+    nota.textContent = 'Só aparecem ruas dentro das áreas mapeadas pelo PDDU. As demais não foram avaliadas.';
+    sec.append(ul, nota);
+    return sec;
+  }
+
+  function rodapeEmergencia() {
+    const p = document.createElement('p');
+    p.className = 'emergencia';
+    p.innerHTML = '📞 <strong>Defesa Civil 199</strong> | <strong>Bombeiros 193</strong>. Fora das áreas mapeadas também pode alagar. Este app não substitui a Defesa Civil.';
+    return p;
+  }
+
+  function achar(q) {
+    const n = semAcento(q.trim());
+    if (n.length < 3) return [];
+    const pontos = (r) => (r.chave === n ? 0 : r.chave.startsWith(n) ? 1 : 2);
+    return [...ruasIdx.values()]
+      .filter((r) => r.chave.includes(n))
+      .sort((a, b) => pontos(a) - pontos(b) || a.nome.localeCompare(b.nome, 'pt-BR'));
+  }
+
+  function mostrarDiagnostico(texto) {
+    const caixa = $('resultado');
+    if (texto.trim().length < 3) {
+      caixa.hidden = true;
+      return;
+    }
+    const achadas = achar(texto);
+    const card = document.createElement('div');
+    card.className = 'diagnostico';
+    if (!ruasCarregadas) {
+      card.textContent = ruasFalhou ? 'Lista de ruas indisponível agora.' : 'Carregando ruas...';
+    } else if (!achadas.length) {
+      const p = document.createElement('p');
+      p.textContent = 'Não encontrei essa rua nas áreas mapeadas pelo PDDU. Isso não significa que não haja risco de alagar: fora das áreas mapeadas também pode alagar.';
+      card.append(p, rodapeEmergencia());
+    } else {
+      const r = achadas[0];
+      const e = estadoDaRua(r);
+      const h = document.createElement('h3');
+      h.textContent = `🏠 Diagnóstico para: ${r.nome}`;
+      const sit = document.createElement('p');
+      sit.className = `situacao ${e}`;
+      const ativas = FAIXAS.filter((f) => r.faixas.has(f.id) && estadoFaixa(f.id) === 'ativa');
+      sit.textContent =
+        e === 'ativa'
+          ? `🔴 Situação: FAIXA ATIVA AGORA (${ativas.map((f) => f.rotulo).join('; ')})`
+          : e === 'indisponivel'
+            ? '⚪ Situação: estado indisponível. Isso não significa que não haja risco de alagar.'
+            : '⚪ Situação: nenhuma faixa ativa agora para esta via';
+      const sig = document.createElement('p');
+      sig.textContent =
+        e === 'ativa'
+          ? 'Esta via tem trechos dentro da área mapeada e há risco de alagar agora. Se você mora em andar térreo, tem comércio ao nível da rua ou garagem em subsolo, previna-se e acompanhe a Defesa Civil (199).'
+          : 'Esta via tem trechos dentro de área mapeada pelo PDDU, mas nenhuma faixa dela está ativa agora. O risco de alagar muda com a maré e a chuva.';
+      card.append(h, sit, sig, blocoEntorno(r.pts, r.nome));
+      if (achadas.length > 1) {
+        const outras = document.createElement('small');
+        outras.textContent = `Outras ruas com esse nome: ${achadas.slice(1, 6).map((x) => x.nome).join('; ')}${achadas.length > 6 ? '…' : ''}`;
+        card.append(outras);
+      }
+      card.append(rodapeEmergencia());
+    }
+    caixa.replaceChildren(card);
+    caixa.hidden = false;
+  }
+
+  function mostrarResultado(dentro, precisao, pos) {
     const caixa = $('resultado');
     const p = document.createElement('p');
     const lista = document.createElement('ul');
@@ -323,7 +456,7 @@
     }
     const nota = document.createElement('small');
     nota.textContent = `Precisão do GPS: ±${Math.round(precisao)} m. Perto da borda de uma área mapeada o resultado é incerto. Este app não substitui a Defesa Civil (199).`;
-    caixa.replaceChildren(p, lista, nota);
+    caixa.replaceChildren(p, lista, ...(pos ? [blocoEntorno([pos], null)] : []), nota, rodapeEmergencia());
     caixa.hidden = false;
   }
 
@@ -347,7 +480,7 @@
           await carregarManchas();
           const { latitude: lat, longitude: lng, accuracy } = pos.coords;
           const dentro = FAIXAS.filter((f) => PIP.pontoNaColecao(manchas[f.id], lng, lat, filtroDe(f.id)));
-          mostrarResultado(dentro, accuracy);
+          mostrarResultado(dentro, accuracy, [lng, lat]);
         } catch (e) {
           console.warn('Falha ao carregar as manchas:', e);
           aviso('Não foi possível carregar as áreas mapeadas para conferir sua posição. Tente de novo com conexão.');
@@ -373,6 +506,7 @@
   $('busca').addEventListener('input', (e) => {
     busca = e.target.value;
     renderLista();
+    mostrarDiagnostico(busca);
   });
 
   (async () => {
@@ -407,6 +541,7 @@
     estado = await buscarEstado();
     renderTudo();
     await ruasP;
+    if (busca) mostrarDiagnostico(busca);
     carregarManchas().catch(() => {}); // aquece o cache para o GPS responder rápido
 
     setInterval(async () => {

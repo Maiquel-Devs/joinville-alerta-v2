@@ -202,3 +202,19 @@ footer strong { color: var(--text-primary); }
 .nome-rua { flex: 1 1 0; min-width: 0; overflow-wrap: anywhere; word-break: break-word; font-weight: 500; }
 .tag { flex: none; white-space: nowrap; font-size: 0.72rem; font-weight: 600; padding: 2px 8px; border-radius: 999px; border: 1px solid var(--border-color); color: var(--text-muted); }
 .tag.ativa { background: #7f1d1d; border-color: #fca5a5; color: #fee2e2; }
+
+/* Diagnóstico por endereço + entorno */
+.chamada { font-size: 1.05rem; margin-bottom: 8px; }
+.diagnostico { background: var(--card-bg); border: 1px solid var(--border-color); border-left: 6px solid var(--nivel-indisponivel); border-radius: 8px; padding: 16px; margin: 8px 0; }
+.diagnostico h3 { font-size: 1.05rem; margin-bottom: 8px; }
+.diagnostico p { font-size: 0.9rem; margin: 6px 0; }
+.diagnostico .situacao { font-weight: 700; }
+.diagnostico .situacao.ativa { color: #fecaca; }
+.entorno { margin-top: 12px; padding-top: 10px; border-top: 1px solid var(--border-color); }
+.entorno h4 { font-size: 0.9rem; margin-bottom: 6px; }
+.entorno ul { list-style: none; font-size: 0.88rem; }
+.entorno li { padding: 6px 0; border-top: 1px solid var(--border-color); overflow-wrap: anywhere; }
+.entorno small, .diagnostico small { display: block; margin-top: 6px; color: var(--text-muted); font-size: 0.75rem; }
+.emergencia { margin-top: 12px; font-size: 0.85rem; }
+.lista-geral { margin: 12px 0; }
+.lista-geral > summary { cursor: pointer; padding: 10px 12px; color: var(--text-muted); font-size: 0.85rem; border: 1px dashed var(--border-color); border-radius: 6px; }

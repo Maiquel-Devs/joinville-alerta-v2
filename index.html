@@ -24,6 +24,13 @@
   <main>
     <p id="aviso-estado" class="aviso" role="status" hidden></p>
 
+    <section class="acoes">
+      <h2 class="chamada">Verificar o risco da minha casa / localização</h2>
+      <button id="btn-location" class="location-btn" type="button">📍 Usar minha localização</button>
+      <input id="busca" class="search-input" type="search" placeholder="🔍 Digite o nome da sua rua (ex: Urussanga)" autocomplete="off" />
+      <div id="resultado" class="resultado" role="status" hidden></div>
+    </section>
+
     <!-- Nível e texto decididos pelo back-end -->
     <section class="ai-card" id="ai-card">
       <div class="ai-header">
@@ -45,16 +52,14 @@
       </div>
     </section>
 
-    <section class="acoes">
-      <button id="btn-location" class="location-btn" type="button">📍 Usar minha localização</button>
-      <div id="resultado" class="resultado" role="status" hidden></div>
-      <input id="busca" class="search-input" type="search" placeholder="🔍 Buscar rua ou área (ex: Urussanga, Vila Nova)" autocomplete="off" />
-    </section>
 
     <p id="aviso-ruas" class="aviso" hidden>Não foi possível carregar a lista de ruas. Abra o app com conexão ao menos uma vez.</p>
 
-    <!-- Lista viva: faixas ativas primeiro -->
-    <ul id="lista" class="lista" aria-live="polite"></ul>
+    <!-- Lista geral, secundária: faixas ativas primeiro -->
+    <details class="lista-geral">
+      <summary>Ver todas as vias mapeadas por faixa</summary>
+      <ul id="lista" class="lista" aria-live="polite"></ul>
+    </details>
     <p id="sem-resultado" class="resumo" hidden>Nenhuma rua ou área encontrada. Isso não significa que não haja risco de alagar: fora das áreas mapeadas também pode alagar.</p>
   </main>
 
