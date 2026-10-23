@@ -5,7 +5,7 @@
   const CHAVE_SALVO = 'ja2_ultimo_estado';
   const TIMEOUT_API_MS = 45000; // por tentativa; o Render gratuito hiberna e a primeira resposta é lenta
   const TENTATIVAS_API = 2; // a 2ª pega o servidor já acordado
-  const LIMITE_RUAS = 60; // ruas desenhadas por cartão antes de "mostrar mais"
+  const LIMITE_RUAS = 10; // ruas desenhadas por cartão antes de "mostrar todas"
 
   // Ordem = prioridade de exibição entre faixas ativas (pior primeiro). Espelha o backend
   // (config.NIVEL_DA_FAIXA); o front não decide nível. Cada faixa é um grupo da lista.
@@ -176,7 +176,7 @@
   let ruasFalhou = false;
   let busca = '';
   const aberto = new Map(); // id -> escolha do usuário (aberto/fechado)
-  const limite = new Map(); // id -> quantas ruas desenhar
+  const expandidas = new Set(); // ids de faixa em que o usuário pediu a lista completa
 
   function indexarRuas(colecao) {
     const mapa = Object.fromEntries(FAIXAS.map((f) => [f.id, new Map()]));
@@ -224,7 +224,8 @@
       if (!busca) aberto.set(f.id, det.open);
     });
 
-    const ate = limite.get(f.id) || LIMITE_RUAS;
+    // Com busca ativa o resultado já é curto e filtrado: mostra tudo.
+    const ate = busca || expandidas.has(f.id) ? ruas.length : LIMITE_RUAS;
     for (const r of ruas.slice(0, ate)) {
       const item = document.createElement('li');
       const nome = document.createElement('span');
@@ -244,9 +245,9 @@
       const mais = document.createElement('button');
       mais.type = 'button';
       mais.className = 'mais';
-      mais.textContent = `Mostrar mais (${ruas.length - ate})`;
+      mais.textContent = `Mostrar todas as ${ruas.length} ruas desta área`;
       mais.addEventListener('click', () => {
-        limite.set(f.id, ate + 200);
+        expandidas.add(f.id);
         renderLista();
       });
       det.append(mais);
