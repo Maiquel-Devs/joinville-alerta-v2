@@ -18,3 +18,6 @@ ENV/
 .idea/
 # Dados brutos do pipeline (shapefiles do PDDU e JSON do Overpass)
 data/raw/
+
+# Dados brutos do joinville_meteo (Zenodo, CC BY 4.0): ficam só no computador do autor
+joinville_meteo_dados/

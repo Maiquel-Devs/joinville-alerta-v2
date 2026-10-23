@@ -1,0 +1,409 @@
+{
+ "nivel": {
+  "iateclube": {
+   "nome": "Iate Clube (estuário)",
+   "primeiro_nivel": "2011-08-29 02:00:00",
+   "ultimo_nivel": "2025-03-30 16:00:00",
+   "qc": {
+    "com_nivel_bruto": 88322,
+    "fora_da_faixa": 2779,
+    "sensor_travado": 13829,
+    "zero_isolado": 11,
+    "pico": 420,
+    "com_nivel_apos_qc": 71283
+   },
+   "mediana_m": 0.297,
+   "media_m": 0.295,
+   "percentis_m": {
+    "p1": -1.928,
+    "p5": -0.894,
+    "p50": 0.297,
+    "p95": 1.51,
+    "p99": 1.994,
+    "p99.9": 3.423
+   },
+   "amplitude_diaria_m": {
+    "mediana": 1.691,
+    "p95": 2.287
+   },
+   "maximo_por_ano_m": {
+    "2011": 1.426,
+    "2012": 1.49,
+    "2013": 1.667,
+    "2014": 1.532,
+    "2015": 1.736,
+    "2016": 1.953,
+    "2017": 1.561,
+    "2018": 3.993,
+    "2019": 3.623,
+    "2020": 3.356,
+    "2021": 2.152,
+    "2022": 2.15,
+    "2023": 2.5,
+    "2024": 2.5,
+    "2025": 2.5
+   },
+   "pct_acima_da_mediana_m": {
+    "p95": 1.213,
+    "p99": 1.697,
+    "p99.9": 3.126
+   },
+   "cobertura_por_ano": {
+    "2011": {
+     "horas_com_nivel": 2998,
+     "horas_registradas": 5894
+    },
+    "2012": {
+     "horas_com_nivel": 8775,
+     "horas_registradas": 8784
+    },
+    "2013": {
+     "horas_com_nivel": 8758,
+     "horas_registradas": 8760
+    },
+    "2014": {
+     "horas_com_nivel": 8759,
+     "horas_registradas": 8760
+    },
+    "2015": {
+     "horas_com_nivel": 7448,
+     "horas_registradas": 7486
+    },
+    "2016": {
+     "horas_com_nivel": 8752,
+     "horas_registradas": 8770
+    },
+    "2017": {
+     "horas_com_nivel": 8290,
+     "horas_registradas": 8669
+    },
+    "2018": {
+     "horas_com_nivel": 2318,
+     "horas_registradas": 4297
+    },
+    "2019": {
+     "horas_com_nivel": 445,
+     "horas_registradas": 7216
+    },
+    "2020": {
+     "horas_com_nivel": 7,
+     "horas_registradas": 8784
+    },
+    "2021": {
+     "horas_com_nivel": 5336,
+     "horas_registradas": 6560
+    },
+    "2022": {
+     "horas_com_nivel": 1811,
+     "horas_registradas": 8758
+    },
+    "2023": {
+     "horas_com_nivel": 2100,
+     "horas_registradas": 8613
+    },
+    "2024": {
+     "horas_com_nivel": 3918,
+     "horas_registradas": 6598
+    },
+    "2025": {
+     "horas_com_nivel": 1568,
+     "horas_registradas": 7791
+    },
+    "2026": {
+     "horas_com_nivel": 0,
+     "horas_registradas": 5808
+    }
+   }
+  },
+  "flotflux": {
+   "nome": "Flotflux (Cachoeira Central)",
+   "primeiro_nivel": "2011-01-18 02:00:00",
+   "ultimo_nivel": "2024-06-02 07:00:00",
+   "qc": {
+    "com_nivel_bruto": 102976,
+    "fora_da_faixa": 675,
+    "sensor_travado": 102,
+    "zero_isolado": 1,
+    "pico": 1258,
+    "com_nivel_apos_qc": 100940
+   },
+   "mediana_m": 1.202,
+   "media_m": 0.96,
+   "percentis_m": {
+    "p1": -0.195,
+    "p5": -0.149,
+    "p50": 1.202,
+    "p95": 1.495,
+    "p99": 2.005,
+    "p99.9": 3.124
+   },
+   "amplitude_diaria_m": {
+    "mediana": 0.157,
+    "p95": 1.324
+   },
+   "maximo_por_ano_m": {
+    "2011": 3.999,
+    "2012": 3.523,
+    "2013": 3.241,
+    "2014": 3.862,
+    "2015": 3.932,
+    "2016": 3.583,
+    "2017": 3.895,
+    "2018": 3.993,
+    "2019": 3.995,
+    "2020": 3.947,
+    "2021": 2.389,
+    "2022": 3.108,
+    "2023": 2.348,
+    "2024": 2.88
+   },
+   "pct_acima_da_mediana_m": {
+    "p95": 0.293,
+    "p99": 0.803,
+    "p99.9": 1.922
+   },
+   "cobertura_por_ano": {
+    "2011": {
+     "horas_com_nivel": 6175,
+     "horas_registradas": 6188
+    },
+    "2012": {
+     "horas_com_nivel": 8769,
+     "horas_registradas": 8779
+    },
+    "2013": {
+     "horas_com_nivel": 8743,
+     "horas_registradas": 8760
+    },
+    "2014": {
+     "horas_com_nivel": 8746,
+     "horas_registradas": 8760
+    },
+    "2015": {
+     "horas_com_nivel": 5711,
+     "horas_registradas": 5730
+    },
+    "2016": {
+     "horas_com_nivel": 8682,
+     "horas_registradas": 8711
+    },
+    "2017": {
+     "horas_com_nivel": 8592,
+     "horas_registradas": 8648
+    },
+    "2018": {
+     "horas_com_nivel": 5976,
+     "horas_registradas": 5992
+    },
+    "2019": {
+     "horas_com_nivel": 7819,
+     "horas_registradas": 7848
+    },
+    "2020": {
+     "horas_com_nivel": 6930,
+     "horas_registradas": 7428
+    },
+    "2021": {
+     "horas_com_nivel": 4971,
+     "horas_registradas": 5773
+    },
+    "2022": {
+     "horas_com_nivel": 8314,
+     "horas_registradas": 8760
+    },
+    "2023": {
+     "horas_com_nivel": 8162,
+     "horas_registradas": 8755
+    },
+    "2024": {
+     "horas_com_nivel": 3350,
+     "horas_registradas": 4191
+    },
+    "2025": {
+     "horas_com_nivel": 0,
+     "horas_registradas": 7816
+    },
+    "2026": {
+     "horas_com_nivel": 0,
+     "horas_registradas": 5808
+    }
+   }
+  },
+  "aguasdejoi": {
+   "nome": "Águas de Joinville (Bucarein)",
+   "primeiro_nivel": "2011-03-14 22:00:00",
+   "ultimo_nivel": "2021-10-23 05:00:00",
+   "qc": {
+    "com_nivel_bruto": 51439,
+    "fora_da_faixa": 164,
+    "sensor_travado": 36,
+    "zero_isolado": 0,
+    "pico": 100,
+    "com_nivel_apos_qc": 51139
+   },
+   "mediana_m": 0.92,
+   "media_m": 0.949,
+   "percentis_m": {
+    "p1": -0.094,
+    "p5": 0.085,
+    "p50": 0.92,
+    "p95": 1.868,
+    "p99": 2.153,
+    "p99.9": 2.649
+   },
+   "amplitude_diaria_m": {
+    "mediana": 1.527,
+    "p95": 1.976
+   },
+   "maximo_por_ano_m": {
+    "2011": 2.054,
+    "2012": 2.454,
+    "2013": 2.469,
+    "2014": 2.274,
+    "2015": 2.397,
+    "2016": 2.816,
+    "2017": 2.596,
+    "2018": 2.651,
+    "2019": 2.725,
+    "2020": 2.856,
+    "2021": 3.167
+   },
+   "pct_acima_da_mediana_m": {
+    "p95": 0.948,
+    "p99": 1.233,
+    "p99.9": 1.729
+   },
+   "cobertura_por_ano": {
+    "2011": {
+     "horas_com_nivel": 4926,
+     "horas_registradas": 5524
+    },
+    "2012": {
+     "horas_com_nivel": 6173,
+     "horas_registradas": 6175
+    },
+    "2013": {
+     "horas_com_nivel": 8731,
+     "horas_registradas": 8737
+    },
+    "2014": {
+     "horas_com_nivel": 1422,
+     "horas_registradas": 1423
+    },
+    "2015": {
+     "horas_com_nivel": 2707,
+     "horas_registradas": 2709
+    },
+    "2016": {
+     "horas_com_nivel": 6634,
+     "horas_registradas": 6638
+    },
+    "2017": {
+     "horas_com_nivel": 5359,
+     "horas_registradas": 5363
+    },
+    "2018": {
+     "horas_com_nivel": 2667,
+     "horas_registradas": 2670
+    },
+    "2019": {
+     "horas_com_nivel": 5067,
+     "horas_registradas": 5067
+    },
+    "2020": {
+     "horas_com_nivel": 4383,
+     "horas_registradas": 4384
+    },
+    "2021": {
+     "horas_com_nivel": 3070,
+     "horas_registradas": 4834
+    },
+    "2022": {
+     "horas_com_nivel": 0,
+     "horas_registradas": 7314
+    },
+    "2023": {
+     "horas_com_nivel": 0,
+     "horas_registradas": 7416
+    },
+    "2024": {
+     "horas_com_nivel": 0,
+     "horas_registradas": 3727
+    }
+   }
+  }
+ },
+ "chuva": {
+  "iateclube": {
+   "dias_validos": 4669,
+   "dias_invalidos_removidos": 0,
+   "p99_mm_dia": 55.3,
+   "maximo_mm_dia": 142.5,
+   "dias_ge_30mm_por_ano": {
+    "2011": 9,
+    "2012": 11,
+    "2013": 8,
+    "2014": 12,
+    "2015": 17,
+    "2016": 11,
+    "2017": 11,
+    "2018": 0,
+    "2019": 8,
+    "2020": 7,
+    "2021": 3,
+    "2022": 7,
+    "2023": 8,
+    "2024": 20,
+    "2025": 9,
+    "2026": 14
+   },
+   "aviso": "Chuva diária (dia civil), não janela móvel de 24 h; serve de ordem de grandeza para o limiar pluvial."
+  },
+  "flotflux": {
+   "dias_validos": 4502,
+   "dias_invalidos_removidos": 0,
+   "p99_mm_dia": 67.8,
+   "maximo_mm_dia": 136.1,
+   "dias_ge_30mm_por_ano": {
+    "2012": 11,
+    "2013": 19,
+    "2014": 13,
+    "2015": 10,
+    "2016": 15,
+    "2017": 25,
+    "2018": 10,
+    "2019": 20,
+    "2020": 13,
+    "2021": 18,
+    "2022": 34,
+    "2023": 24,
+    "2024": 15,
+    "2025": 16,
+    "2026": 17
+   },
+   "aviso": "Chuva diária (dia civil), não janela móvel de 24 h; serve de ordem de grandeza para o limiar pluvial."
+  },
+  "aguasdejoi": {
+   "dias_validos": 2788,
+   "dias_invalidos_removidos": 0,
+   "p99_mm_dia": 47.0,
+   "maximo_mm_dia": 120.6,
+   "dias_ge_30mm_por_ano": {
+    "2012": 6,
+    "2013": 16,
+    "2014": 0,
+    "2015": 3,
+    "2016": 7,
+    "2017": 15,
+    "2018": 0,
+    "2019": 2,
+    "2020": 6,
+    "2021": 10,
+    "2022": 11,
+    "2023": 0,
+    "2024": 0
+   },
+   "aviso": "Chuva diária (dia civil), não janela móvel de 24 h; serve de ordem de grandeza para o limiar pluvial."
+  }
+ }
+}

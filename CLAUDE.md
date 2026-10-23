@@ -153,7 +153,8 @@ Decididas nesta fase:
 - **Aviso do próprio registro:** "Confirm the license is compatible with the source-data terms before publishing." Os termos da SEPROT continuam como pergunta 1 do e-mail à autora (ver task.md, D2.A).
 - **Código:** sem licença no repositório. Não copiar; reimplementar.
 - **Dados brutos:** ficam fora do git. O repositório recebe só constantes, relatórios de método e a citação.
-- **Não verificado ainda:** datas de cobertura das estações (Iate Clube, Flotflux, Bucarein) e o significado de "estuário: não". Vêm de resumos automáticos e precisam ser conferidos no zip.
+- **Verificado em 23/10/2026 nos arquivos horários do repositório dela** (pacote `joinville_meteo_dados`): último nível válido do Iate Clube em 30/04/2025, do Flotflux em 02/06/2024 e do Bucarein em 23/10/2021. O Iate Clube tem lacunas grandes em 2018–2021. O arquivo horário traz valores absurdos de nível (ex.: 1.045 m) e precisa de controle de qualidade antes de qualquer ajuste.
+- **Não verificado ainda:** igualdade desses arquivos com o zip do Zenodo, termos da SEPROT, zero da régua e o significado de `estuary: false` no Flotflux.
 
 ## Riscos conhecidos
 

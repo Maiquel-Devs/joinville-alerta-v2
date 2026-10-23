@@ -1,94 +1,86 @@
-# 🌊 joinville-alerta-v2
+# joinville-alerta-v2
 
-> **Plataforma autônoma e de latência zero para prevenção de alagamentos estuarinos e pluviais em Joinville/SC.**  
-> *Engenharia orientada a Primeiros Princípios: tempo de resposta < 5ms, geolocalização nativa por GPS, resiliência offline (PWA), inteligência artificial contextual e custo de infraestrutura R$ 0,00.*
+Lista de **risco de alagar por rua** em Joinville/SC, gratuita e que funciona offline. Mostra ao cidadão em quais ruas a água pode subir com a maré e a chuva de agora, ordenadas do pior para o melhor.
 
----
+Projeto acadêmico e comunitário do curso de Engenharia de Software da UNIVILLE. Custo de infraestrutura: R$ 0,00.
 
-## ⚠️ O Problema
+> **O que este app não é.** Ele **infere** risco a partir de maré e chuva; não observa nada na rua e não confirma alagamento. **Fora das áreas mapeadas pelo PDDU também pode alagar.** Em emergência, ligue **199 (Defesa Civil)**. Este app não substitui a Defesa Civil.
 
-Joinville possui um histórico crítico de alagamentos causados pela combinação de enxurradas pluviais e pelo represamento estuarino no Rio Cachoeira (maré alta na Baía da Babitonga). 
+## Como funciona
 
-A primeira versão de aplicações do gênero apresentava gargalos claros de engenharia:
-* **Latência e Gargalos de Rede:** Consultas feitas diretamente no navegador do usuário a APIs externas tornavam a aplicação lenta e vulnerável a limites de requisição (*rate limits*).
-* **Vulnerabilidade a Quedas de Conectividade:** Durante tempestades severas, quedas de sinal móvel/internet impediam o acesso ao diagnóstico em tempo real.
-* **Fricção de Interface:** Exigência de busca manual do bairro por parte de motoristas e moradores em situações de emergência.
-* **Alertas Rígidos:** Mensagens baseadas unicamente em regras de `if/else` que não explicavam o impacto real para o morador de cada região.
-* **Insegurança:** Risco de vazamento de chaves de API e segredos diretamente no código JavaScript do cliente.
+```
+Open-Meteo (chuva) ─┐
+CIRAM/Epagri (maré) ┴─► Back-end (FastAPI, Render) ──► /api/v1/status-geral ──┐
+                         decide o estado de cada faixa                          ▼
+PDDU × OpenStreetMap ──► pipeline offline ──► data/*.geojson ──► Front (PWA, GitHub Pages)
+                         (computador do autor)                    lista viva "pior primeiro"
+```
 
----
+- **Back-end (`backend/`):** a cada 15 minutos coleta a chuva acumulada em 24 h e a maré, e avalia quatro **faixas de gatilho**: `mare_1_6`, `mare_2_5`, `pluvial_vila_nova` e `pluvial_itaum`. Cada faixa fica `ativa`, `inativa` ou `indisponivel`. O nível global é a pior faixa ativa. O resultado fica em cache na memória, com o horário (`gerado_em`). **É o único lugar que decide o risco.**
+- **Texto de alerta:** a IA (Mistral) só escreve a mensagem a partir de um nível já calculado. Não reclassifica nada. Se ela falhar, o texto vem de uma regra fixa. A chave fica só no servidor.
+- **Pipeline offline (`scripts/process_geojson.py`):** cruza as manchas do PDDU (SIRGAS 2000 / UTM 22S, convertidas para WGS84) com as ruas do OpenStreetMap e grava `data/ruas_risco.geojson`, em que cada trecho carrega as faixas em que está. Roda no computador do autor, nunca em produção.
+- **Front (`index.html`, `app.js`, `style.css`, `sw.js`):** PWA estático. Monta a lista com o estado das faixas vindo da API e com o GeoJSON de ruas. Só ordena e desenha; não calcula risco. O botão de localização testa o ponto do GPS contra as manchas (`pip.js`, sem biblioteca geoespacial). Não há mapa na interface.
+- **Offline:** o Service Worker responde do cache e atualiza em segundo plano. Sem rede, o app mostra o último estado salvo com o horário dele e avisa quando o dado passou da validade (30 min).
 
-## 🎯 Objetivo
+## Estados e linguagem
 
-O **`joinville-alerta-v2`** foi desenvolvido para resolver esses gargalos através de um ecossistema autônomo, desacoplado e resiliente:
-* Entregar um painel com tempo de resposta instantâneo (**< 5ms**) operando sobre cache em memória RAM.
-* **Geolocalização Ativa por GPS (Zero Fricção):** Identificação automática do bairro mais próximo via coordenadas geográficas reais.
-* **Arquitetura PWA Offline-First:** Garantir funcionamento ininterrupto mesmo em cenários de queda total de internet durante tempestades na cidade.
-* Processar telemetria em tempo real (chuva 24h/48h, maré, saturação do solo e vetor de vento) e traduzir dados técnicos brutos em orientações claras em linguagem humana utilizando IA Generativa.
-* Garantir isolamento absoluto de credenciais e operação contínua 24/7 com custo zero de hospedagem.
+Cada faixa aparece como **ativa** (risco de alagar agora), **inativa** ("Nenhuma faixa ativa agora"), **indisponível** (sem dado válido) ou com **dado antigo**. Dado ausente nunca vira "normal", e "nenhuma faixa ativa" não significa "sem risco".
 
----
+## Fontes de dados e licenças
 
-## 📦 O Que o Sistema Entrega
+| Dado | Fonte | Observação |
+|---|---|---|
+| Manchas de alagamento | PDDU de Joinville (cartilha de 2011) | Só cenários modelados; não reflete obras recentes |
+| Ruas | © colaboradores do [OpenStreetMap](https://www.openstreetmap.org/copyright), licença ODbL | Via Overpass |
+| Chuva | [Open-Meteo](https://open-meteo.com) | Uso não comercial; o limite diário de requisições já foi atingido no Render |
+| Maré | Marégrafo CIRAM/Epagri (medida) e previsão MohidSC (estimativa) | O rótulo do front diz se é medida ou estimativa. Uso em produção ainda depende de autorização |
 
-* **Geolocalização por Proximidade (GPS):** Cálculo em tempo real da distância em quilômetros até as coordenadas dos bairros de Joinville através da fórmula de Haversine, aplicando o filtro de risco instantaneamente.
-* **PWA Instalável (Progressive Web App):** Aplicação que pode ser "instalada" na tela inicial do smartphone/PC e utilizada sem dependência de loja de aplicativos.
-* **Resiliência Offline-First:** O `Service Worker` intercepta requisições e serve os dados armazenados em cache local durante apagões de rede.
-* **Telemetria Urbana Multi-Variável:** Monitoramento contínuo da chuva acumulada (24h/48h), índice de saturação da bacia, velocidade/direção do vento e elevação hidrometeorológica da maré.
-* **Alerta Humanizado por IA:** Diagnóstico dinâmico gerado pelo agente inteligente interpretando a gravidade da situação.
-* **Matriz de Risco Topográfica:** Classificação de áreas críticas e vias públicas com base nas cotas de altitude (em metros) em relação ao nível do mar.
+## Limites conhecidos
 
----
+- **Modelo oficial × estimativa:** as manchas são o modelo oficial do PDDU. A maré e a chuva usadas para ativar cada faixa são medições ou estimativas externas, e os gatilhos (1,6 m, 2,5 m, 30 mm em 24 h) ainda são provisórios e precisam ser revisados com eventos reais.
+- **Referencial vertical:** o zero da régua do marégrafo pode diferir do referencial do PDDU. Isso ainda precisa ser confirmado.
+- **Itaum:** a mancha coincide com a de maré de 2,5 m e pode representar maré, não chuva. A confirmação depende da fonte original.
+- **Fora das manchas:** falhas de drenagem e chuva local continuam possíveis em qualquer rua.
+- **Cota por rua:** não há. A granularidade é o trecho dentro de uma mancha.
+- **Render gratuito:** hiberna, e a primeira resposta pode demorar. O app mostra o cache enquanto espera.
 
-## 🛠️ Tecnologias & Stack
+## Como rodar
 
-* **Back-End:** Python 3.11+, FastAPI, Uvicorn.
-* **Front-End & PWA:** HTML5 Semântico, CSS3 Moderno, JavaScript ES Modules (Geolocalização NAtiva / Haversine), Web App Manifest (`manifest.json`) e Service Worker (`sw.js`).
-* **Hospedagem & Infraestrutura:** 
-  * **Render:** Hospedagem da API Python (Web Service Containerized).
-  * **GitHub Pages:** Hospedagem estática e distribuída do Front-End PWA.
+**Back-end**
 
----
+```bash
+cd backend
+pip install -r requirements.txt
+# opcional: MISTRAL_API_KEY no arquivo .env (sem ele, vale o texto fixo)
+uvicorn main:app --reload
+pip install -r requirements-dev.txt && python -m pytest tests   # tabela de testes do motor
+```
 
-## 📚 Bibliotecas Utilizadas
+**Front:** sirva a pasta raiz por HTTP (por exemplo, `python -m http.server`) e abra `index.html`. O Service Worker exige HTTPS ou localhost. A URL da API fica no topo do `app.js`.
 
-* **`fastapi`**: Framework web assíncrono de altíssima performance para construção da REST API.
-* **`uvicorn`**: Servidor ASGI leve para execução do FastAPI.
-* **`apscheduler`**: Agendador de tarefas em segundo plano (*background worker*) que atualiza os dados automaticamente a cada 15 minutos sem travar requisições do usuário.
-* **`httpx`**: Cliente HTTP assíncrono utilizado para consumir serviços externos de telemetria meteorológica.
-* **`pydantic`**: Validação estrita de dados e garantia da estrutura dos payloads JSON.
-* **`python-dotenv`**: Gerenciamento e isolamento de variáveis de ambiente em desenvolvimento local.
+**Regerar `data/ruas_risco.geojson`** (computador do autor; precisa de `scripts/requirements.txt`, dos shapefiles do PDDU em `data/raw/pddu/` e de internet para o Overpass):
 
----
+```bash
+pip install -r scripts/requirements.txt
+python scripts/process_geojson.py inspecionar   # campos e CRS dos shapefiles
+python scripts/process_geojson.py baixar        # ruas do OpenStreetMap
+python scripts/process_geojson.py cruzar --filtro inundacao_vila_nova:status_1=Atual --filtro "inundacao_vila_nova:tempretor=25 anos"
+```
 
-## 🌐 APIs Externas & Agente Inteligente
+Os arquivos de `data/geojson/` (as quatro manchas já simplificadas, WGS84, 5 casas decimais) foram gerados por um script de uso único que ainda não está versionado. Os arquivos brutos do PDDU não vão para o repositório nem para a pasta servida.
 
-* **Open-Meteo API:** Coleta de telemetria pluviométrica em tempo real (chuva 24h e histórico de 48h com `past_days=2`) e dinâmica dos ventos (`wind_speed_10m` e `wind_direction_10m`) para as coordenadas de Joinville.
-* **Modelo Hidrometeorológico Híbrido da Babitonga:** Algoritmo calibrado que une o componente astronômico M2 ($12.42\text{h}$) à sobre-elevação meteorológica por represamento de Vento Sul/Sudeste ($135^\circ$ a $225^\circ$).
-* **Agente Mistral AI (`mistral-small-latest`):** Processamento de Linguagem Natural (NLP) responsável por interpretar a combinação de chuva, maré e nível de risco, gerando sínteses explicativas para a população.
+## Estrutura
 
----
+```
+backend/   API, motor de risco, coleta, cache e testes
+data/      manchas simplificadas e ruas por faixa (servidos ao app)
+scripts/   pipeline offline
+docs/      notas das fases do projeto
+teste/     páginas de auditoria (Leaflet só aqui)
+```
 
-## ⚙️ Como Foi Feito (Decisões de Engenharia)
+Planejamento e decisões: `CLAUDE.md` e `task.md`.
 
-* **Geolocalização Geográfica (Fórmula de Haversine):** O `app.js` solicita as coordenadas GPS nativas do navegador e executa o cálculo de distância em grandes círculos ($R = 6371\text{ km}$) em relação aos centróides dos bairros mapeados de Joinville, destacando e filtrando a localização atual sem exigir digitação.
-* **Resiliência PWA & Service Worker (`sw.js`):** Adotou-se a estratégia *Network First with Cache Fallback*. Durante o uso normal, o sistema atualiza silenciosamente os dados no dispositivo do usuário. Em caso de perda de conexão, o Service Worker responde com a interface e o último estado em memória.
-* **Índice Antecedente de Chuva (Saturação do Solo):** O sistema analisa o volume de precipitação das **48 horas anteriores** para modelar a capacidade de absorção do solo. Chuvas recentes acumuladas aplicam um **Multiplicador de Saturação ($1.20\times$ a $1.35\times$)** na equação de risco.
-* **Modelo Hidrometeorológico Híbrido (Maré + Vento Sul):** O `scheduler.py` calcula o nível real da água somando a onda astronômica M2 à sobre-elevação meteorológica provocada por ventos do quadrante **Sul e Sudeste ($135^\circ$ a $225^\circ$)**.
-* **In-Memory Cache Store:** Dados salvos na memória RAM do servidor para garantir respostas em sub-5ms.
+## Créditos
 
----
-
-## ⚠️ Limitações Conhecidas do MVP
-
-* **Altimetria Agregada por Bairro:** Na versão atual (v2), a cota topográfica de altitude (ex: 1.2m, 1.5m) é um atributo associado à zona/bairro.
-* **Microrelevo:** No mundo real, uma rua extensa pode cruzar variações de cota ao longo do seu trajeto.
-* **Visão v3 (Roadmap Futuro):** Ingestão de arquivos GeoJSON e Shapefiles do SIMGeo Joinville para obter a cota altimétrica georreferenciada individualmente por trecho de logradouro.
-
----
-
-## 👥 Créditos & Desenvolvimento
-
-Desenvolvido pela **Equipe do Projeto de Vivências** do curso de Engenharia de Software da **UNIVILLE** (Universidade da Região de Joinville).
-
-Projeto focado em inovação tecnológica, gestão de riscos urbanos e aplicação prática de engenharia de software para a comunidade de Joinville/SC.
+Equipe do Projeto de Vivências, Engenharia de Software, UNIVILLE.

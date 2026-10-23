@@ -1,32 +1,26 @@
-# 📑 Documentação - Fase 1: Front-End Responsivo & Validação de UX
+# Fase 1: Front-end e validação de UX
 
-## 🎯 Objetivo da Fase
-Construir e validar a interface visual *mobile-first* do **`joinville-alerta-v2`**, focando na velocidade de carregamento, clareza de leitura sob emergência e acessibilidade para o cidadão sem exigir downloads ou logins.
+## Objetivo
+Interface *mobile-first*, lida em menos de 2 s sob emergência, sem login e sem instalar nada.
 
----
+## Decisões
+- JavaScript puro, sem framework; `style.css` próprio.
+- **12/10/2026:** a primeira versão (mapa em tela cheia) foi substituída por uma **lista viva "pior primeiro" + busca + GPS**. O mapa foi removido da interface e do cache inicial; o Leaflet ficou só em `teste/camadas.html`, para auditoria.
+- O front só ordena e desenha. O risco é decidido pelo back-end (ver `fase3-backend-cache.md`).
 
-## 🛠️ Decisões de Arquitetura (First Principles)
-- **Zero Frameworks JS:** Implementado em JavaScript ES6+ Vanilla para evitar dependências pesadas e garantir execuções rápidas.
-- **Estilização Enxuta:** Uso de `style.css` próprio (~2 KB) em vez de frameworks pesados como o Bootstrap, garantindo carregamento instantâneo em redes 3G.
-- **Mapeamento Simplificado:** Substituição de mapas interativos e polígonos GeoJSON pesados por uma lista estática e pesquisável de vias e bairros de cota baixa (Bucarein, Centro, Anita Garibaldi, Vila Nova).
+## Arquivos
 
----
-
-## 📂 Ficheiros Entregues
-
-| Ficheiro | Função |
+| Arquivo | Função |
 | :--- | :--- |
-| `index.html` | Interface PWA leve com foco na visualização mobile. |
-| `style.css` | Folha de estilos minimalista com variáveis CSS para níveis de risco. |
-| `app.js` | Renderização dinâmica do DOM e motor de busca instantânea de ruas. |
-| `mock-data.json` | Estrutura de dados que simula a resposta do Mistral AI e telemetria de crise. |
+| `index.html` | Estrutura da tela: cartão de nível, indicadores, busca, lista e rodapé com avisos. |
+| `style.css` | Estilos e cores dos estados (ativa, inativa, indisponível, dado antigo). |
+| `app.js` | Busca o estado na API, monta os cartões por faixa, busca por rua e botão de GPS. |
+| `pip.js` | Ponto-em-polígono para o GPS, sem biblioteca geoespacial. |
+| `sw.js` | Service Worker: cache primeiro e atualização em segundo plano. |
 
----
+O antigo `mock-data.json` e a regra de risco por bairro foram removidos na Etapa 4.
 
-## 🧪 Resultados da Validação
-1. **Tempo de Resposta:** Carregamento em < 100ms em ambiente local.
-2. **UX de Emergência:** Card principal do Agente Mistral AI no topo, destacando ações imediatas (ex: *"Retire veículos de subsolos"*).
-3. **Filtro de Ruas:** Pesquisa em tempo real funcionando perfeitamente para vias críticas como a *Avenida Coronel Procópio Gomes* e *Rua Minas Gerais*.
-
----
-*Próximo Passo:* **Fase 2 - Motor de Coleta & Agente de IA (Mistral AI)**.
+## Validação
+- Estado ativo simulado em 16/10/2026: o cartão de nível e a ordem "pior primeiro" funcionaram.
+- Estado indisponível exibido com estilo tracejado, sem virar "normal".
+- Medição de desempenho no celular real (tarefa 3.6): os tempos ainda não foram registrados.

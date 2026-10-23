@@ -1,2 +1,6 @@
 pyshp>=2.3
 shapely>=2.0
+
+# analise_mare_qc.py
+pandas>=2.0
+numpy>=1.26
