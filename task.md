@@ -74,7 +74,9 @@ Script rodado no seu computador, nunca em tempo de execução.
 
 ---
 
-## Etapa 3 — Front-end: lista viva, busca e GPS (Etapa 1 pronta)
+## Etapa 3 — Front-end: diagnóstico por endereço, entorno e lista geral secundária (Etapa 1 pronta)
+
+**Revisada em 23/10/2026:** a tela principal passou a ser o **diagnóstico por endereço + entorno (~300 m) + orientação preventiva** (ver "Regra de UX" no `CLAUDE.md`). Busca e GPS ficam no topo; a lista viva por faixa (3.1) virou lista geral recolhida, oculta durante a busca. Sem 🟢/"segura", sem 🟡 por proximidade e sem rota sugerida, porque o GeoJSON não tem cota nem severidade por rua.
 
 **Reestruturada em 12/10/2026 (decisão de UX; ver "Regra de UX" no `CLAUDE.md`):** a tela principal é uma lista viva de bairros/ruas ordenada "pior primeiro", com busca e GPS. O mapa em tela cheia sai da tela principal. O PWA só ordena e mostra o que o back-end decidiu; nenhuma regra de risco própria.
 
@@ -87,6 +89,9 @@ Já feito e reaproveitado: leitura de `/api/v1/status-geral` com último estado 
 - [x] 3.4 ⚖️ **Mapa removido da interface principal e do cache inicial (decidido em 12/10/2026: apagar de vez).** Implementado: `index.html` sem Leaflet, `sw.js` v4 sem `vendor/leaflet/`. `teste/camadas.html` e `vendor/leaflet/` ficam no repo só para auditoria (decidir na Etapa 4 se `vendor/` sai). Antes: **Remover/recolher o mapa Leaflet principal.** Recomendado: painel recolhido "Ver mapa detalhado", com Leaflet e GeoJSON de ruas carregados só ao abrir (o peso inicial cai para a lista, o `pip.js` e as manchas). Alternativa mais enxuta e mais fiel a "apagar antes de adicionar": apagar o mapa e o Leaflet do app. Substitui a antiga decisão de mapa base offline: tiles só online no painel secundário, ou nenhum.
 - [x] 3.5 **Revisar os textos fixos** para a nova tela: "risco de alagar", "Fora das manchas também pode alagar", Defesa Civil (199), "o app não substitui a Defesa Civil", atribuição OSM (ODbL) e PDDU, legenda das cores da lista e "Nenhuma faixa ativa agora" no lugar de "sem risco". **Feita em 16/10/2026:** rodapé e avisos sem "mancha"/mapa ("áreas mapeadas pelo PDDU"); rótulos de maré por bacia hidrográfica, sem bairros (termos a conferir na cartilha do PDDU, ver `CLAUDE.md`).
 - [x] 3.6 🧪 **Desempenho no celular real:** resposta em menos de 0,5 s com cache, leitura sem zoom, lista fluida. Medir de verdade. Se pesar, reduzir antes de trocar de biblioteca. **Validado em 16/10/2026 no navegador local** (estado ativo simulado: cartão de nível, indicadores e ordem "pior primeiro"). Tempos medidos no celular não registrados aqui.
+- [x] 3.7 **Diagnóstico por endereço + entorno (~300 m).** Feito e validado em 23/10/2026: busca (3 letras ou mais) e GPS renderizam o cartão `#resultado` com status da via (🔴 faixa ativa / ⚪ nenhuma faixa ativa / ⚪ indisponível), orientação preventiva (térreo, comércio, garagem em subsolo), até 4 vias vizinhas mapeadas com distância aproximada e rodapé 199/193. Rua fora das áreas mapeadas: texto dizendo que isso não significa ausência de risco.
+- [x] 3.8 **Lista geral secundária.** `<details id="lista-geral">` recolhido no fim da página e oculto durante a busca; 10 ruas por cartão (maior trecho dentro da área) com botão "Mostrar todas"; faixa ativa abre sozinha. Substitui a filtragem antiga por lista como foco da tela.
+- [ ] 3.9 ⚖️ **Ranking de criticidade e rota segura (futuro, bloqueado por dados).** Só depois que houver cota ou severidade por trecho (Prefeitura ou cálculo no pipeline): reavaliar 🟡/🟢, "vias mais críticas" e sugestão de saída. Hoje é proibido simular isso.
 
 **[x] Pronto quando:** a lista aparece em modo avião com o último estado e o horário; quem tem faixa ativa fica no topo; busca e GPS respondem em texto claro; nenhum texto diz "alagado" nem "sem risco"; leitura fluida em celular intermediário.
 

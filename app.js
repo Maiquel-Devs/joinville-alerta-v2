@@ -394,7 +394,9 @@
   function mostrarDiagnostico(texto) {
     const caixa = $('resultado');
     const ativa = texto.trim().length >= 3;
-    $('lista-geral').hidden = ativa; // com busca ativa o foco é só o diagnóstico
+    // Com busca ativa o foco é só o diagnóstico: lista geral oculta. Ao limpar a busca, volta fechada.
+    $('lista-geral').hidden = ativa;
+    $('lista-geral').open = false;
     if (!ativa) {
       caixa.hidden = true;
       return;
@@ -484,6 +486,7 @@
           await carregarManchas();
           const { latitude: lat, longitude: lng, accuracy } = pos.coords;
           const dentro = FAIXAS.filter((f) => PIP.pontoNaColecao(manchas[f.id], lng, lat, filtroDe(f.id)));
+          $('lista-geral').open = false;
           mostrarResultado(dentro, accuracy, [lng, lat]);
         } catch (e) {
           console.warn('Falha ao carregar as manchas:', e);
@@ -515,6 +518,7 @@
 
   (async () => {
     // Cache primeiro: mostra já o último estado salvo, depois atualiza pela rede.
+    $('lista-geral').open = false; // tela inicial limpa: a lista geral sempre começa recolhida
     const salvo = lerSalvo();
     if (salvo) estado = { dados: salvo, origem: 'salvo' };
     renderTudo();

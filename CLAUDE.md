@@ -16,15 +16,28 @@ Mapa de **risco de alagamento por rua** em Joinville/SC, gratuito e funcional of
 - Nunca "sem risco" nem "cidade segura" para áreas fora das manchas: fora da mancha **não** significa seguro.
 - Dado indisponível **nunca** aparece como "normal".
 
-## Regra de UX (inviolável, decidida em 12/10/2026)
+## Regra de UX (inviolável; revisada em 23/10/2026, a decisão de 12/10/2026 continua valendo para o mapa)
 
-**Interface orientada a lista viva ordenada por prioridade (Pior Primeiro) + busca rápida. O mapa interativo em tela cheia está removido da tela principal; foi apagado da interface e do cache inicial.** Motivo: sob tempestade, polígonos e zoom pesam na leitura; a tela precisa ser lida em menos de 2 s.
+**O app deixa de ser um exibidor de listas de ruas. O uso principal é o DIAGNÓSTICO POR ENDEREÇO: o cidadão informa a rua (ou usa o GPS) e recebe, na hora, a situação dela, um bloco com as ruas mapeadas ao redor (~300 m) e orientação preventiva.** Motivo: sob tempestade, a pergunta de quem usa é "e a minha rua?", e a tela precisa ser lida em menos de 2 s. O mapa interativo continua fora da interface e do cache inicial.
 
-Ordenação dinâmica da lista (o front só ordena, não decide risco):
-1. No topo, em cartão de destaque (vermelho/laranja) com as ruas afetadas, ficam os bairros/áreas com ao menos um trecho em faixa `ativa` segundo `/api/v1/status-geral`. Entre eles, vem primeiro quem tem a faixa de pior nível, na mesma ordem do motor do back-end.
-2. Depois, os que só têm faixa `indisponivel` (cartão neutro com aviso; nunca "normal").
-3. Por fim, os demais em ordem alfabética, com estado neutro: **"Nenhuma faixa ativa agora"**. Não usar "sem risco": fora de faixa ativa ou de mancha continua podendo alagar.
-4. Busca por rua/bairro e botão de GPS (ponto-em-polígono com `pip.js`) respondem em texto claro: dentro de qual mancha, qual faixa está ativa agora, mais "Fora das manchas também pode alagar" e "Este app não substitui a Defesa Civil (199)".
+Portas de entrada, sempre no topo: o campo de busca (`#busca`) e o botão `📍 Usar minha localização`, sob o título "Verificar o risco da minha casa / localização". Logo abaixo ficam o cartão de nível e os indicadores de chuva e maré.
+
+Ao buscar uma rua (3 letras ou mais) ou usar o GPS, o app renderiza **imediatamente** o cartão `#resultado`, logo abaixo do campo de busca, com:
+1. **Status da via:** 🔴 faixa ativa agora (com o nome da faixa), ⚪ nenhuma faixa ativa agora, ou ⚪ estado indisponível. O estado vem do back-end (`/api/v1/status-geral`); o front só repete.
+2. **Orientação preventiva**, em texto geral: andar térreo, comércio ao nível da rua, garagem em subsolo, acompanhar a Defesa Civil (199). Sem detalhe físico que o app não sabe (lâmina d'água, ponto mais alto da quadra etc.).
+3. **Entorno:** até 4 ruas mapeadas num raio de ~300 m, com distância aproximada e o mesmo estado (🔴 ou ⚪), as ativas primeiro.
+4. **Rodapé de emergência:** Defesa Civil 199, Bombeiros 193, "fora das áreas mapeadas também pode alagar" e "este app não substitui a Defesa Civil".
+
+Rua não encontrada nas áreas mapeadas: texto claro dizendo que isso **não** significa ausência de risco de alagar.
+
+**Lista geral secundária:** a lista das vias por faixa fica num elemento recolhível (`<details id="lista-geral">`) no fim da página, fechada por padrão, e é **ocultada durante uma busca ativa**. Dentro dela: faixa ativa primeiro (pior nível antes), depois indisponível, depois as demais em ordem alfabética ("Nenhuma faixa ativa agora"); cada cartão mostra as 10 ruas de maior trecho dentro da área, com botão para ver todas; a faixa ativa abre sozinha.
+
+**Integridade dos dados (o que o app não pode fazer):**
+- Nunca "Zona segura", "segura" ou "sem risco". Fora da mancha não significa seguro, e não há dado altimétrico por imóvel.
+- Nunca simular severidade, "atenção" por proximidade ou cota por rua: o `ruas_risco.geojson` só traz, por trecho, as faixas em que ele está e o comprimento dentro da área. Sem 🟡, sem 🟢.
+- Nunca sugerir rota ou direção "mais segura": sem cota por trecho, isso pode mandar a pessoa para outra via que também alaga.
+- O entorno só lista ruas das áreas mapeadas (as demais não estão no arquivo) e o cartão diz isso.
+- A transparência sobre o que é mapeado pelo PDDU e o que está fora dele é obrigatória.
 
 ## Princípios (empate → vence a opção que apaga mais código)
 
@@ -53,7 +66,7 @@ Ordenação dinâmica da lista (o front só ordena, não decide risco):
 - **Back-end (FastAPI no Render):** scheduler a cada 15 min coleta chuva (24 h e 48 h) e vento na Open-Meteo, obtém a maré pela fonte definida na Etapa 0, calcula a maré efetiva e avalia as **faixas de gatilho**: `mare_1_6`, `mare_2_5` e as pluviais (Vila Nova, Itaum). Cada faixa fica `ativa`, `inativa` ou `indisponivel`. O nível global é a **pior faixa ativa**. Cache em RAM guarda o resultado com `gerado_em`.
 - **IA (Mistral):** recebe faixas ativas e nível já calculado. Só é chamada quando o conjunto de faixas ativas muda; senão reaproveita o texto anterior. Se falhar, texto determinístico de reserva. Para o nível normal, texto neutro (nenhuma faixa ativa agora; áreas fora das manchas também podem alagar).
 - **Pipeline offline (computador do autor):** shapefiles do PDDU (SIRGAS 2000, UTM 22S → WGS84) × ruas do OpenStreetMap (Overpass) → GeoJSON estático em que cada trecho carrega sua faixa de gatilho. Script e arquivo gerado versionados no repo.
-- **Front (PWA no GitHub Pages):** lista viva ordenada "pior primeiro" (ver Regra de UX), montada com o estado das faixas decidido pelo back-end e o GeoJSON estático de ruas. Service Worker responde cache primeiro e atualiza em segundo plano. GPS testado contra as manchas. Bairro é rótulo de agrupamento; seu estado é derivado das faixas dos seus trechos, sem regra própria por bairro ou cota. Sem mapa na interface (decisão de 12/10/2026); Leaflet só em `teste/camadas.html`.
+- **Front (PWA no GitHub Pages):** diagnóstico por endereço (busca por rua e GPS) com entorno de ~300 m e orientação preventiva (ver Regra de UX); a lista geral por faixa fica recolhida. Monta tudo com o estado das faixas decidido pelo back-end e o GeoJSON estático de ruas. Service Worker responde cache primeiro e atualiza em segundo plano. GPS testado contra as manchas (`pip.js`). O front só ordena e desenha; não calcula risco. Sem mapa na interface (decisão de 12/10/2026); Leaflet só em `teste/camadas.html`.
 
 ### Contrato da API — `/api/v1/status-geral` (proposto, a validar na Etapa 1)
 
@@ -83,7 +96,7 @@ Etapa 0 (validar fontes, sem código) é **pré-requisito de tudo**. Depois: 1 m
 | 0 — Validar as fontes | Concluída (informado pelo autor em 08/10/2026). Falta registrar as decisões em "Decisões tomadas". |
 | 1 — Motor único no back-end | Concluída (informado pelo autor em 08/10/2026). |
 | 2 — Pipeline ruas × manchas | Em andamento: ruas baixadas e cruzadas (`scripts/process_geojson.py` → `data/ruas_risco.geojson`, ~30 KB comprimidos). Faltam: commit (2.6), script que gera `data/geojson/` dos brutos (2.1b), tamanho mínimo do pedaço (2.4) e conferência visual (2.7, feita na 3.0). |
-| 3 — Front | Em andamento. A primeira versão (mapa em tela cheia, GPS, estados e Service Worker) foi validada em 12/10/2026 e será **refeita como lista viva** por decisão de UX do mesmo dia (ver Regra de UX). |
+| 3 — Front | Concluída para a entrega atual: diagnóstico por endereço + entorno (~300 m) com lista geral recolhida, validado em 23/10/2026. Medição de desempenho no celular real ainda sem números registrados (3.6). |
 | 4 — Limpeza e README | Não iniciada. |
 
 ## Dados geográficos (`data/geojson/`)
@@ -137,7 +150,8 @@ As Etapas 0 e 1 foram concluídas, mas **os valores decididos ainda não foram r
 | Nomes dos níveis | _a preencher_ (provisório: rótulos vindos do campo `nivel` da API) | |
 | Agrupamento da lista | **Por faixa/área** (Maré 1,6 m, Maré 2,5 m, Chuva — Vila Nova, Chuva — Itaum; rótulos completos na linha seguinte), sem bairro e sem dataset novo | 12/10/2026 |
 | Mapa Leaflet | **Apagado da interface principal e do cache inicial.** `teste/camadas.html` fica só para auditoria | 12/10/2026 |
-| Interface principal | **Lista viva "pior primeiro" + busca + GPS; mapa em tela cheia removido** (ver Regra de UX). | 12/10/2026 |
+| Interface principal | **Lista viva "pior primeiro" + busca + GPS; mapa em tela cheia removido** (ver Regra de UX). **Tela principal substituída em 23/10/2026 pelo diagnóstico por endereço (linha seguinte); o mapa continua removido.** | 12/10/2026 |
+| Diagnóstico por endereço + entorno | **Interface principal passa a ser o diagnóstico por endereço** (busca `#busca` ou GPS) com cartão `#resultado` imediato: status da via, orientação preventiva, até 4 vias vizinhas mapeadas em ~300 m e contatos 199/193. Lista geral em `<details id=\"lista-geral\">`, recolhida e oculta durante a busca. Sem 🟢/\"zona segura\", sem 🟡 por proximidade, sem rota sugerida (não há cota nem severidade por rua no GeoJSON). Substitui a \"lista viva\" como tela principal. | 23/10/2026 |
 | Rótulos das faixas de maré | **"Maré — Bacia do Cachoeira / Cotas Intermediárias (1,6m)"** e **"Maré — Calha Baixa do Cachoeira e Estuário (2,5m)"**. Sem bairros: nenhum dado do projeto liga bairro a mancha, e citar bairro sem cruzamento GIS induziria erro. "Cachoeira" vem dos arquivos das manchas; "Cotas Intermediárias", "Calha Baixa" e "Estuário" são termos do autor, **a conferir na cartilha do PDDU**. | 16/10/2026 |
 | UX mobile da lista viva | Faixa `ativa` abre o `<details>` sozinha; inativa fica recolhida (a escolha do usuário prevalece). Cada rua mostra só o nome, em linha flex com alvo de toque ≥ 44 px e quebra de nomes longos. **Só a faixa ativa marca a rua** (🔴 "Faixa ativa"); inativa e indisponível ficam sem marca, pois o estado já está no cabeçalho do cartão. **Sem verde/"normal" e sem amarelo:** verde passaria a ideia de "sem risco" e o back-end não informa gravidade por faixa (exigiria regra de risco no front). Rodapé sem menção a mapa ou "mancha": "áreas mapeadas pelo PDDU". | 16/10/2026 |
 
