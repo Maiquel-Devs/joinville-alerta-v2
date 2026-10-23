@@ -74,10 +74,10 @@
   // Simulação visual de faixa ativa. Só liga com ?simular=<faixa> na URL (ex.: ?simular=mare_2_5
   // ou ?simular=pluvial_itaum); sem o parâmetro o app usa a API normalmente. Não grava nada salvo.
   async function buscarEstado() {
-    const r = await buscarEstadoReal();
     const id = new URLSearchParams(location.search).get('simular');
-    if (!FAIXAS.some((f) => f.id === id)) return r;
-    const base = r.dados ?? {};
+    if (!FAIXAS.some((f) => f.id === id)) return buscarEstadoReal();
+    // Não espera a API (que pode levar até ~90 s no Render): simula na hora, sem rede.
+    const base = lerSalvo() ?? {};
     console.warn(`[MOCK] simulando faixa ativa: ${id}`);
     return {
       origem: 'rede',
