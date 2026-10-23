@@ -216,7 +216,12 @@
     const det = document.createElement('details');
     det.open = busca ? true : aberto.get(f.id) ?? e === 'ativa';
     const sum = document.createElement('summary');
-    sum.textContent = busca ? `${ruas.length} de ${total} ruas` : `${total} ruas nesta área`;
+    const parcial = !busca && !expandidas.has(f.id) && ruas.length > LIMITE_RUAS;
+    sum.textContent = busca
+      ? `${ruas.length} de ${total} ruas`
+      : parcial
+        ? `${LIMITE_RUAS} ruas com maior trecho dentro da área mapeada (de ${total})`
+        : `${total} ruas nesta área, das de maior trecho para as de menor`;
     const ul = document.createElement('ul');
     ul.className = 'ruas';
     det.append(sum, ul);
@@ -226,7 +231,9 @@
 
     // Com busca ativa o resultado já é curto e filtrado: mostra tudo.
     const ate = busca || expandidas.has(f.id) ? ruas.length : LIMITE_RUAS;
-    for (const r of ruas.slice(0, ate)) {
+    // Sem busca: ordena pelo comprimento do trecho dentro da área mapeada (único dado por rua; não é severidade).
+    const ordenadas = busca ? ruas : [...ruas].sort((a, b) => b.m - a.m);
+    for (const r of ordenadas.slice(0, ate)) {
       const item = document.createElement('li');
       const nome = document.createElement('span');
       nome.className = 'nome-rua';
