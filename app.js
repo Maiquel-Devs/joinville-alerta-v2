@@ -187,8 +187,9 @@
       if (!nome) continue;
       const g = feat.geometry;
       const linhas = g.type === 'MultiLineString' ? g.coordinates : [g.coordinates];
-      const rua = ruasIdx.get(nome) ?? { nome, chave: semAcento(nome), faixas: new Set(), pts: [] };
+      const rua = ruasIdx.get(nome) ?? { nome, chave: semAcento(nome), faixas: new Set(), pts: [], m: 0 };
       for (const id of faixas) rua.faixas.add(id);
+      rua.m += m; // metros de via dentro das áreas mapeadas
       for (const l of linhas) rua.pts.push(...l);
       ruasIdx.set(nome, rua);
       for (const id of faixas) mapa[id]?.set(nome, (mapa[id].get(nome) || 0) + m);
@@ -332,8 +333,8 @@
     const es = [...r.faixas].map(estadoFaixa);
     return es.includes('ativa') ? 'ativa' : es.includes('indisponivel') ? 'indisponivel' : 'inativa';
   }
-  const ICONE_RUA = { ativa: '🔴', inativa: '⚪', indisponivel: '⚪' };
-  const TEXTO_RUA = { ativa: 'faixa ativa agora', inativa: 'nenhuma faixa ativa agora', indisponivel: 'estado indisponível' };
+  const ICONE_RUA = { ativa: '🟠', inativa: '⚪', indisponivel: '⚪' };
+  const TEXTO_RUA = { ativa: 'parte da via em faixa ativa agora', inativa: 'nenhuma faixa ativa agora', indisponivel: 'estado indisponível' };
 
   function vizinhas(pts, excluir) {
     const ref = amostrar(pts);
@@ -417,17 +418,18 @@
       h.textContent = `🏠 Diagnóstico para: ${r.nome}`;
       const sit = document.createElement('p');
       sit.className = `situacao ${e}`;
+      card.classList.add(`via-${e}`);
       const ativas = FAIXAS.filter((f) => r.faixas.has(f.id) && estadoFaixa(f.id) === 'ativa');
       sit.textContent =
         e === 'ativa'
-          ? `🔴 Situação: FAIXA ATIVA AGORA (${ativas.map((f) => f.rotulo).join('; ')})`
+          ? `🟠 Situação: RISCO DE ALAGAR EM TRECHOS DA VIA (${ativas.map((f) => f.rotulo).join('; ')})`
           : e === 'indisponivel'
             ? '⚪ Situação: estado indisponível. Isso não significa que não haja risco de alagar.'
             : '⚪ Situação: nenhuma faixa ativa agora para esta via';
       const sig = document.createElement('p');
       sig.textContent =
         e === 'ativa'
-          ? 'Esta via tem trechos dentro da área mapeada e há risco de alagar agora. Se você mora em andar térreo, tem comércio ao nível da rua ou garagem em subsolo, previna-se e acompanhe a Defesa Civil (199).'
+          ? `Cerca de ${Math.round(r.m)} m desta via estão dentro da área mapeada, com faixa ativa agora. O risco de alagar pode se concentrar em partes da rua e não necessariamente em toda a extensão. Se você mora em andar térreo, tem comércio ao nível da rua ou garagem em subsolo, previna-se e acompanhe a Defesa Civil (199).`
           : e === 'indisponivel'
             ? 'Esta via tem trechos dentro de área mapeada pelo PDDU, mas não há dado válido para dizer se alguma faixa está ativa. Trate como possível risco de alagar e acompanhe a Defesa Civil (199).'
             : 'Esta via tem trechos dentro de área mapeada pelo PDDU, mas nenhuma faixa dela está ativa agora. O risco de alagar muda com a maré e a chuva.';
