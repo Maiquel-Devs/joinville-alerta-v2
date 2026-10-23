@@ -20,7 +20,7 @@ Mapa de **risco de alagamento por rua** em Joinville/SC, gratuito e funcional of
 
 **O app deixa de ser um exibidor de listas de ruas. O uso principal é o DIAGNÓSTICO POR ENDEREÇO: o cidadão informa a rua (ou usa o GPS) e recebe, na hora, a situação dela, um bloco com as ruas mapeadas ao redor (~300 m) e orientação preventiva.** Motivo: sob tempestade, a pergunta de quem usa é "e a minha rua?", e a tela precisa ser lida em menos de 2 s. O mapa interativo continua fora da interface e do cache inicial.
 
-Portas de entrada, sempre no topo: o campo de busca (`#busca`) e o botão `📍 Usar minha localização`, sob o título "Verificar o risco da minha casa / localização". Logo abaixo ficam o cartão de nível e os indicadores de chuva e maré.
+Ordem da tela (definida em 23/10/2026): cabeçalho e avisos → cartão de nível do município e indicadores de chuva e maré → consulta individual (título "Verificar o risco da minha casa / localização", botão `📍 Usar minha localização`, campo `#busca` e o cartão `#resultado`) → lista geral recolhida → rodapé. Busca e GPS são as portas de entrada primárias, logo depois do contexto geral.
 
 Ao buscar uma rua (3 letras ou mais) ou usar o GPS, o app renderiza **imediatamente** o cartão `#resultado`, logo abaixo do campo de busca, com:
 1. **Status da via:** 🔴 faixa ativa agora (com o nome da faixa), ⚪ nenhuma faixa ativa agora, ou ⚪ estado indisponível. O estado vem do back-end (`/api/v1/status-geral`); o front só repete.
