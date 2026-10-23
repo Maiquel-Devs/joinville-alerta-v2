@@ -63,7 +63,7 @@ Script rodado no seu computador, nunca em tempo de execução.
 - [x] 2.3 Cruzar (entrada: `data/geojson/`; Vila Nova só entra depois que o cenário de `Atual`/`Futuro` e dos tempos de retorno estiver registrado, tarefa 0.7): trecho na mancha 1,6 m → faixa `mare_1_6`; só na 2,5 m → `mare_2_5`; nas pluviais → faixa pluvial correspondente; fora de todas → não entra no arquivo. (`process_geojson.py cruzar` com Vila Nova `Atual` + `25 anos` → `data/ruas_risco.geojson`; cada trecho traz `faixas` (lista), pois um trecho pode estar em mais de uma mancha, ex.: `mare_2_5` + `pluvial_itaum`.)
 - [x] 2.4 ⚖️ Trecho parcialmente dentro: recomendação dividir na borda; definir tamanho mínimo do pedaço. **Validado visualmente em 12/10/2026 (3.0):** dividido na borda e com mínimo provisório de 10 m (`TAMANHO_MIN_PEDACO_M`); 179 pedaços menores foram descartados.
 - [x] 2.5 ⚖️ Fixar a meta de tamanho dos **arquivos de ruas** (comprimidos, somados às 345 KB das manchas, cabendo no cache do Service Worker). Simplificar e reduzir precisão das ruas com as mesmas regras das manchas. Linha de base: manchas brutas ≈ 11,6 MB → 345 KB comprimidas. **Medido:** ruas = 0,22 MB sem compressão (~30 KB comprimidas), simplificação de 1 m e 5 casas decimais; manchas + ruas ≈ 375 KB comprimidas, dentro do orçamento de ~1 MB da 3.2.
-- [ ] 2.6 Versionar o script das ruas e o arquivo gerado no repo (junto com o da tarefa 2.1b). **Falta o commit** de `scripts/` e `data/ruas_risco.geojson`; a 2.1b segue aberta, pois o script das ruas consome `data/geojson/` e não o regenera dos brutos.
+- [x] 2.6 Versionar o script das ruas e o arquivo gerado no repo (junto com o da tarefa 2.1b). **Falta o commit** de `scripts/` e `data/ruas_risco.geojson`; a 2.1b segue aberta, pois o script das ruas consome `data/geojson/` e não o regenera dos brutos. **Conferido em 23/10/2026:** `scripts/process_geojson.py`, `scripts/requirements.txt` e `data/ruas_risco.geojson` estão versionados; a 2.1b segue aberta.
 - [x] 2.7 Conferir a olho no mapa uma amostra (Rua Minas Gerais, Rua Urussanga, Rua Inácio Bastos). **Conferido a olho em 12/10/2026 (3.0).** Resultado numérico: Urussanga e Inácio Bastos têm trechos; Minas Gerais não tem nenhum (ver "Decisões tomadas" no `CLAUDE.md`).
 
 - [x] 2.8 ⚖️ **Rótulo de bairro/área por trecho** (para a lista viva da 3.1). **Decidido em 12/10/2026: opção (B), agrupar por faixa/área** (Maré de 1,6 m, Maré de 2,5 m, Chuva — Vila Nova, Chuva — Itaum), sem dataset de bairros. Nenhum campo novo em `data/ruas_risco.geojson`. Qualquer campo novo em `data/ruas_risco.geojson` precisa ser usado pelo app e caber no orçamento.
@@ -93,11 +93,11 @@ Já feito e reaproveitado: leitura de `/api/v1/status-geral` com último estado 
 
 ## Etapa 4 — Limpeza e README honesto 🔒 (depende de 3)
 
-- [ ] 4.1 Remover `mock-data.json` (bairros, cotas, telemetria de exemplo).
-- [ ] 4.2 Remover a regra de risco por bairro do `app.js` e a lista de coordenadas de bairros como fonte de risco.
-- [ ] 4.3 Remover `src/services/` (`riskEngine.js`, `mistralAgent.js`, `weatherService.js`) — o `index.html` não os carrega; o `mistralAgent.js` ainda aceita chave de API no navegador.
-- [ ] 4.4 Remover a maré sintética, se a Etapa 0 escolheu outra fonte.
-- [ ] 4.4b Conferir que nenhum arquivo bruto do PDDU nem GeoJSON antigo (`.json` com 15 casas decimais) ficou na pasta servida; apagar referências antigas a `data/geojson/*.json` no código e no Service Worker.
+- [x] 4.1 Remover `mock-data.json` (bairros, cotas, telemetria de exemplo). **Feito (`9bcce24`).**
+- [x] 4.2 Remover a regra de risco por bairro do `app.js` e a lista de coordenadas de bairros como fonte de risco. **Conferido em 23/10/2026:** o `app.js` não tem regra por bairro nem cota; só ordena pelas faixas da API.
+- [x] 4.3 Remover `src/services/` (`riskEngine.js`, `mistralAgent.js`, `weatherService.js`) — o `index.html` não os carrega; o `mistralAgent.js` ainda aceita chave de API no navegador. **Feito (`9bcce24`).**
+- [x] 4.4 Remover a maré sintética, se a Etapa 0 escolheu outra fonte. **Conferido em 23/10/2026:** sem cossenoide no código; a maré vem do marégrafo CIRAM (medida) ou da previsão MohidSC (estimativa).
+- [x] 4.4b Conferir que nenhum arquivo bruto do PDDU nem GeoJSON antigo (`.json` com 15 casas decimais) ficou na pasta servida; apagar referências antigas a `data/geojson/*.json` no código e no Service Worker. **Conferido em 23/10/2026:** `data/geojson/` só tem os 4 `.geojson` simplificados; `data/raw/` está no `.gitignore` (não é publicado); o `sw.js` só cita `manifest.json` como `.json`.
 - [ ] 4.5 README com: arquitetura real, fontes e licenças (PDDU e OpenStreetMap), limites conhecidos, diferença entre modelo oficial e estimativa, e como regerar `data/geojson/` com o script.
 - [ ] 4.6 Atualizar `docs/fase*.md` e o Handoff para refletir as Etapas 0 a 3.
 
