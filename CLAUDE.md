@@ -45,7 +45,8 @@ Ordenação dinâmica da lista (o front só ordena, não decide risco):
 - Não rodar o pipeline de ruas em tempo de execução; ele é offline, no computador do autor.
 - Não colocar no caminho servido ao app os arquivos brutos do PDDU nem GeoJSON com mais de 5 casas decimais ou atributos sem uso.
 - Não importar biblioteca geoespacial no front só para ponto-em-polígono.
-- Não copiar código do repositório joinville_meteo (sem licença declarada). Dados dele só com atribuição e depois de conferir os termos (ver Doc 2).
+- Não copiar código do repositório joinville_meteo (sem licença declarada): reimplementar os métodos.
+- Não colocar dados brutos do joinville_meteo no repositório; só resultados derivados (constantes, relatórios), com citação (ver "Dados de terceiros").
 
 ## Arquitetura-alvo
 
@@ -131,6 +132,7 @@ As Etapas 0 e 1 foram concluídas, mas **os valores decididos ainda não foram r
 | Cenário de Vila Nova (o que "Futuro" representa) | **Cenário `Atual`, tempo de retorno de 25 anos** (filtro `status_1=Atual`, `tempretor=25 anos`). "Futuro" não é "com obras": a mancha Futura é maior que a Atual (2,14 × 1,50 km² em 25 anos), parece cenário de maior ocupação; fica fora. | 08/10/2026 |
 | Cenário de Itaum | **Mantida como `pluvial_itaum`.** Nota: a mancha coincide espacialmente com a de maré de 2,5 m (100% da área de Itaum, 3,97 km², está dentro dela; 35% dentro da de 1,6 m), então pode representar maré, não chuva. Significado a confirmar na fonte; se for maré, passar ao gatilho de maré. Os trechos nessa área saem com `mare_2_5` + `pluvial_itaum`. | 08/10/2026 |
 | Limiar pluvial | _a preencher_ | |
+| Permissão de uso do conjunto joinville_meteo | CC BY 4.0 com atribuição, permitido segundo o autor do projeto; termos da SEPROT ainda a confirmar por e-mail | 23/10/2026 |
 | Trecho em mais de uma faixa (front) | Pintar pela **pior faixa ativa** no momento, como o nível global. Rótulos dos níveis: provisórios, vindos do campo `nivel` da API. | 12/10/2026 |
 | Nomes dos níveis | _a preencher_ (provisório: rótulos vindos do campo `nivel` da API) | |
 | Agrupamento da lista | **Por faixa/área** (Maré 1,6 m, Maré 2,5 m, Chuva — Vila Nova, Chuva — Itaum; rótulos completos na linha seguinte), sem bairro e sem dataset novo | 12/10/2026 |
@@ -143,6 +145,16 @@ Decididas nesta fase:
 - Exemplo real de "fora da mancha não significa seguro": a **Rua Minas Gerais** existe no OSM (vários trechos), mas fica a mais de 1,5 km de qualquer mancha usada (nenhum trecho dela entra em `data/ruas_risco.geojson`). Registrada em 08/10/2026; a tela deve manter o aviso de que áreas fora das manchas também podem alagar.
 - Manchas servidas ao app: simplificadas, 5 casas decimais, extensão `.geojson`, pasta `data/geojson/` (ver "Dados geográficos").
 
+## Dados de terceiros (joinville_meteo)
+
+- **Conjunto:** "Joinville hydrometeorological dataset: station master series SEPROT / Defesa Civil de Joinville", autora J. C. Dos Santos-Silva (UDESC, LaCiA/PPGEC). DOI `10.5281/zenodo.21682712`, versão `data-2026-07-29`, arquivo de 169,5 MB (md5 `b918fc969e6ddc61b0549bd2ef56dba8`). Verificado na página do Zenodo em 23/10/2026.
+- **Licença:** CC BY 4.0. Uso permitido com atribuição, segundo o autor do projeto (23/10/2026).
+- **Citação:** DOI do Zenodo e SEPROT / Defesa Civil de Joinville. O registro também traz um arquivo WRF do INPE; **não usamos o WRF**, então a citação do INPE só entra se ele passar a ser usado.
+- **Aviso do próprio registro:** "Confirm the license is compatible with the source-data terms before publishing." Os termos da SEPROT continuam como pergunta 1 do e-mail à autora (ver task.md, D2.A).
+- **Código:** sem licença no repositório. Não copiar; reimplementar.
+- **Dados brutos:** ficam fora do git. O repositório recebe só constantes, relatórios de método e a citação.
+- **Não verificado ainda:** datas de cobertura das estações (Iate Clube, Flotflux, Bucarein) e o significado de "estuário: não". Vêm de resumos automáticos e precisam ser conferidos no zip.
+
 ## Riscos conhecidos
 
 - Manchas cobrem só cenários modelados; falhas de drenagem e chuva local fora delas continuam possíveis.
@@ -150,6 +162,8 @@ Decididas nesta fase:
 - Render hiberna (primeira resposta lenta; o front mostra cache primeiro); Mistral tem cota.
 - Se a maré real não casar com os cenários do PDDU, os gatilhos de 1,6 m e 2,5 m não podem ser usados direto.
 - Dois pontos do documento de arquitetura estão marcados "a confirmar no texto original": referencial do PDDU e recorrência da maré de 1,6 m.
+- **Fonte da maré em conflito com o plano de Doc 2.** O código atual usa o marégrafo CIRAM (medida) e a previsão MohidSC (estimativa), mas o Doc 2 propõe um preditor harmônico ajustado ao Iate Clube. Antes de implementar D2.H, decidir o papel de cada um (tarefa 0.8 no task.md). Hoje a "Fonte da maré" em "Decisões tomadas" ainda está em branco.
+- Série do Iate Clube termina em abril de 2025 (segundo o river.json, resumo automático). Não serve para nível em tempo real.
 
 ## Estado do código
 

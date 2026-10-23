@@ -25,6 +25,7 @@ Termina em **uma página de decisões**. Má calibração da maré invalida todo
 - [x] 0.5 ⚖️ **Limiar pluvial.** Herdar da v1 (adaptado da Defesa Civil de SC) ou recalibrar. Recomendação: herdar e revisar depois de eventos reais.
 - [x] 0.6 **Fechar a página de decisões**.
 - [ ] 0.7 **Copiar cada decisão para "Decisões tomadas" no `CLAUDE.md`** (os valores ainda não foram registrados; inclui o cenário de Vila Nova e de Itaum da tabela 0.4).
+- [ ] 0.8 ⚖️ **Papel de cada fonte de maré.** O código usa CIRAM (medida) e MohidSC (previsão); o Doc 2 propõe um preditor do Iate Clube. Decidir: (a) só CIRAM e MohidSC, e o Iate Clube serve de validação histórica; (b) o preditor do Iate Clube substitui a MohidSC; (c) outra combinação. Registrar no `CLAUDE.md`.
 
 **Pronto quando:** uma página fixar fonte de maré, referencial vertical, significado de 1,6 m, tabela polígono → cenário e limiar pluvial.
 **Se a maré real não casar com os cenários do PDDU:** decidir, com dados em mão, entre desvio documentado ou rever os gatilhos.
@@ -109,14 +110,15 @@ Já feito e reaproveitado: leitura de `/api/v1/status-geral` com último estado 
 
 Detalhes e passos A–I no documento "Dados do joinville_meteo e maré do Iate Clube". Resumo, na ordem:
 
-- [ ] D2.A Enviar o e-mail de permissão/perguntas à autora/LaCiA (via professor) e conferir os termos da fonte original (SEPROT).
-- [ ] D2.B Preparar os dados (zip do Zenodo fora do git; inválido → NaN, nunca zero).
-- [ ] D2.C Fixar os critérios de aceite **antes** do ajuste.
+- [ ] D2.0 ⚖️ **Baixar o zip do Zenodo** (`joinville_meteo-data-2026-07-29.zip`, 169,5 MB, md5 `b918fc969e6ddc61b0549bd2ef56dba8`) no computador do autor, fora do git. Bloqueio: o domínio zenodo.org não está liberado na sessão de IA, então a medição de cobertura só roda localmente ou com o arquivo enviado.
+- [~] D2.A Permissão. **Feito:** uso do CC BY 4.0 com atribuição, informado pelo autor em 23/10/2026; registrado no `CLAUDE.md`. **Falta:** e-mail à autora/LaCiA (via professor) com as perguntas 2 a 4 (referência da régua, série após abril de 2025, significado de "estuário: não") e com a confirmação dos termos da SEPROT (pergunta 1). As perguntas 2 e 4 bloqueiam D2.E e D2.H.
+- [ ] D2.B Preparar os dados (zip do Zenodo fora do git; inválido → NaN, nunca zero). Medir a cobertura real por estação e ano; conferir os resumos automáticos: fim do Iate Clube (abr/2025), Bucarein (2021 ou 2024-07) e Flotflux (2011–2024).
+- [ ] D2.C ⚖️ Fixar os critérios de aceite **antes** do ajuste. **Propostas para decidir** (não fechadas): erro no horário da preamar ≤ 30 min; erro na altura da preamar ≤ 10 cm, medido separadamente nas preamares mais altas; erro médio quadrático no período de teste a fixar depois de ver a variância da série.
 - [ ] D2.D 🧪 Ajuste harmônico da série do Iate Clube com treino/teste separados → constantes da maré.
 - [ ] D2.E Transferência Iate Clube → Centro (defasagem, amplitude, resíduo de chuva).
 - [ ] D2.F Resíduo de vento: calibrar com fonte de vento equivalente à de produção, ou remover o termo.
 - [ ] D2.G Conferir gatilhos e cobertura com os desastres (só sanity-check).
-- [ ] D2.H Módulo de maré no back-end (constantes + soma de cossenos, testes em datas medidas; sem dependências pesadas no Render).
+- [ ] D2.H Módulo de maré no back-end (constantes + soma de cossenos, testes em datas medidas; sem dependências pesadas no Render). **Atenção:** o plano original substituía `calculate_tide()`, que já não existe no código atual (a maré vem do CIRAM ou da MohidSC). Só começar depois da tarefa 0.8.
 - [ ] D2.I Documentar método e citar a fonte (DOI 10.5281/zenodo.21682712).
 
 **Atenção:** o referencial vertical das estações (zero da régua) é diferente do referencial do PDDU. Isso é o maior risco aberto e liga D2 à tarefa 0.2.
